@@ -1,0 +1,172 @@
+@use '@angular/material' as mat;
+
+:root {
+  --rm-primary: #00897b;
+  --rm-primary-dark: #00695c;
+  --rm-accent: #ff7043;
+  --rm-success: #2e7d32;
+  --rm-success-bg: #e6f4ea;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #f4f6f7;
+  --rm-bg: #f7f8fa;
+  --rm-text: #1b1f1e;
+  --rm-text-muted: #667169;
+  --rm-border: #e2e6e4;
+  --rm-radius-lg: 20px;
+  --rm-radius-md: 14px;
+  --rm-radius-sm: 10px;
+  --rm-shadow: 0 2px 10px rgba(20, 30, 28, 0.06), 0 1px 2px rgba(20, 30, 28, 0.04);
+  --rm-shadow-hover: 0 8px 24px rgba(20, 30, 28, 0.12);
+  color-scheme: light;
+}
+
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rm-primary: #4db6ac;
+    --rm-primary-dark: #26a69a;
+    --rm-accent: #ffab91;
+    --rm-success: #81c995;
+    --rm-success-bg: #16302090;
+    --rm-surface: #1c211f;
+    --rm-surface-alt: #232a27;
+    --rm-bg: #141816;
+    --rm-text: #eef1ef;
+    --rm-text-muted: #a3aca6;
+    --rm-border: #2c3532;
+    --rm-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --rm-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /*
+   * iOS home-screen (standalone) PWAs rubber-band/bounce whenever the
+   * *document* itself is the scrolling element — even by a sub-pixel
+   * amount (safe-area insets, 100vh vs the real dynamic viewport, etc.)
+   * there is nothing meaningful to intercept the gesture the way Safari's
+   * own browser chrome normally would. Pinning html/body so they can never
+   * scroll, and doing all scrolling inside app-root's .rm-app-scroll
+   * container instead, removes the bounce on pages with no real content
+   * while leaving normal scrolling intact for pages that do overflow.
+   */
+  overflow: hidden;
+  position: fixed;
+  overscroll-behavior: none;
+  width: 100%;
+}
+
+body {
+  font-family: 'Manrope', 'Roboto', sans-serif;
+  background: var(--rm-bg);
+  color: var(--rm-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+p { margin: 0; }
+
+.rm-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 16px 96px;
+  /*
+   * Relative to .rm-app-scroll (which has the real, explicit height), not
+   * to the viewport. min-height: 100vh here was taller than the actual
+   * visible area on iOS (no address bar in standalone mode, safe-area
+   * insets, dynamic toolbar, etc.), which was enough overflow on its own
+   * to make otherwise-static pages draggable/bouncy.
+   */
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.rm-card {
+  background: var(--rm-surface);
+  border-radius: var(--rm-radius-lg);
+  box-shadow: var(--rm-shadow);
+  border: 1px solid var(--rm-border);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.rm-card--interactive {
+  cursor: pointer;
+}
+.rm-card--interactive:hover,
+.rm-card--interactive:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--rm-shadow-hover);
+}
+.rm-card--interactive:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.rm-success-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--rm-success-bg);
+  color: var(--rm-success);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.rm-fade-in {
+  animation: rmFadeIn 320ms ease both;
+}
+@keyframes rmFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rm-pop {
+  animation: rmPop 260ms cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes rmPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.rm-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rm-text-muted);
+  margin: 24px 0 10px 4px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--rm-border); border-radius: 8px; }
+
+.mat-mdc-snack-bar-container.rm-snack-success .mdc-snackbar__surface {
+  background: var(--rm-success) !important;
+}
+
+// Used by the expense bill image preview dialog — full-bleed, no default
+// Material dialog padding/background so the image can fill the screen.
+.rm-image-dialog-panel .mdc-dialog__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  border-radius: 0 !important;
+}
+.rm-image-dialog-panel .mat-mdc-dialog-container {
+  --mat-dialog-container-max-width: 100vw;
+}

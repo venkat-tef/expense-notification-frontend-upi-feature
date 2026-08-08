@@ -1,0 +1,23 @@
+<div class="rm-notif-sheet">
+  <div class="rm-notif-sheet__header">
+    <h3>Notifications</h3>
+    @if (notifications.unreadCount() > 0) {
+      <button class="rm-notif-sheet__mark-all" (click)="markAllRead()">Mark all read</button>
+    }
+  </div>
+
+  <div class="rm-notif-sheet__list">
+    @for (n of visible(); track n.id) {
+      <button class="rm-notif-sheet__item rm-notif-sheet__item--unread" (click)="open(n)">
+        <mat-icon class="rm-notif-sheet__icon">{{ icon(n.type) }}</mat-icon>
+        <div class="rm-notif-sheet__text">
+          <span class="rm-notif-sheet__title">{{ n.title }}</span>
+          <span class="rm-notif-sheet__body">{{ n.body }}</span>
+          <span class="rm-notif-sheet__time">{{ timeAgo(n.createdAt) }}</span>
+        </div>
+      </button>
+    } @empty {
+      <p class="rm-notif-sheet__empty">You're all caught up.</p>
+    }
+  </div>
+</div>

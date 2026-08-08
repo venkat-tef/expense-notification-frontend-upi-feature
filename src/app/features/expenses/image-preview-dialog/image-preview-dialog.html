@@ -1,0 +1,17 @@
+<div class="rm-image-preview">
+  <button class="rm-image-preview__close" (click)="close()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <div
+    class="rm-image-preview__viewport"
+    (touchstart)="onTouchStart($event)"
+    (touchmove)="onTouchMove($event)"
+    (touchend)="onTouchEnd($event)"
+    (dblclick)="onDoubleClick()"
+  >
+    <img [src]="data.url" alt="Bill" [style.transform]="'scale(' + scale() + ')'" />
+  </div>
+
+  <p class="rm-image-preview__hint">Pinch or double-tap to zoom</p>
+</div>

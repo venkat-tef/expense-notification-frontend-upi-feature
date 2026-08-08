@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Expense' : 'Add Expense' }}</h2>
+
+<div mat-dialog-content class="rm-expense-form">
+  <mat-form-field appearance="outline">
+    <mat-label>Expense Title</mat-label>
+    <input matInput [(ngModel)]="title" maxlength="50" placeholder="e.g. Groceries for the week" />
+    @if (errors()['title']) {
+      <mat-error>{{ errors()['title'] }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Category</mat-label>
+    <mat-select [(ngModel)]="category">
+      @for (c of categories; track c) {
+        <mat-option [value]="c">{{ c }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Amount</mat-label>
+    <span matPrefix>₹&nbsp;</span>
+    <input matInput type="number" step="0.01" min="0" [(ngModel)]="amountInput" placeholder="0.00" />
+    @if (errors()['amount']) {
+      <mat-error>{{ errors()['amount'] }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Paid By</mat-label>
+    <mat-select [(ngModel)]="paidByMemberId">
+      @for (m of data.members; track m.id) {
+        <mat-option [value]="m.id">{{ m.name }}</mat-option>
+      }
+    </mat-select>
+    @if (errors()['paidByMemberId']) {
+      <mat-error>{{ errors()['paidByMemberId'] }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Expense Date</mat-label>
+    <input matInput type="date" [(ngModel)]="expenseDate" [max]="today" />
+    @if (errors()['expenseDate']) {
+      <mat-error>{{ errors()['expenseDate'] }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Notes (optional)</mat-label>
+    <textarea matInput rows="2" [(ngModel)]="notes"></textarea>
+  </mat-form-field>
+
+  <!-- <div class="rm-expense-form__image">
+    <span class="rm-expense-form__image-label">Bill Image (optional)</span>
+    @if (previewUrl(); as preview) {
+      <div class="rm-expense-form__preview">
+        <img [src]="preview" alt="Bill preview" />
+        <button mat-icon-button type="button" (click)="removeImage()" aria-label="Remove image">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    } @else {
+      <label class="rm-expense-form__upload">
+        <mat-icon>upload</mat-icon>
+        Upload photo
+        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" (change)="onFileSelected($event)" hidden />
+      </label>
+    }
+    <span class="rm-expense-form__hint">JPG, PNG, or WEBP · up to 5 MB</span>
+  </div> -->
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" [disabled]="saving()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
+    {{ saving() ? 'Saving…' : (isEdit ? 'Save Changes' : 'Add Expense') }}
+  </button>
+</div>

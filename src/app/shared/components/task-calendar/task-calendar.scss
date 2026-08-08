@@ -1,0 +1,105 @@
+.rm-cal {
+  padding: 16px;
+}
+
+.rm-cal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.rm-cal__month {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.rm-cal__nav {
+  background: var(--rm-surface-alt);
+  border: 1px solid var(--rm-border);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--rm-text);
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.rm-cal__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rm-text-muted);
+  margin-bottom: 4px;
+}
+
+.rm-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.rm-cal__day {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--rm-surface-alt);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rm-text);
+  transition: transform 120ms ease, background 120ms ease;
+
+  &:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  &--out {
+    opacity: 0.3;
+  }
+
+  &--today {
+    border-color: var(--rm-cal-accent, var(--rm-primary));
+  }
+
+  &--future {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+
+  &--done {
+    background: color-mix(in srgb, var(--rm-cal-accent, var(--rm-primary)) 16%, transparent);
+  }
+}
+
+.rm-cal__daynum {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rm-cal__badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--rm-cal-accent, var(--rm-primary));
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

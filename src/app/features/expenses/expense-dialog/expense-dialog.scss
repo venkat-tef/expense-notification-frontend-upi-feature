@@ -1,0 +1,78 @@
+.rm-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 280px;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.rm-expense-form__image {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 12px;
+}
+
+.rm-expense-form__image-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rm-text-muted);
+}
+
+.rm-expense-form__upload {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 8px 14px;
+  border: 1px dashed var(--rm-border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rm-primary-dark);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--rm-surface-alt);
+  }
+}
+
+.rm-expense-form__preview {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--rm-border);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.rm-expense-form__hint {
+  font-size: 11px;
+  color: var(--rm-text-muted);
+}

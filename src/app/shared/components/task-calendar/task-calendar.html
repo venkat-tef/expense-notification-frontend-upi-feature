@@ -1,0 +1,39 @@
+<div class="rm-cal">
+  <div class="rm-cal__header">
+    <button class="rm-cal__nav" (click)="prevMonth()" aria-label="Previous month">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="rm-cal__month">{{ monthLabel() }}</span>
+    <button class="rm-cal__nav" (click)="nextMonth()" [disabled]="!canGoNext()" aria-label="Next month">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <div class="rm-cal__weekdays">
+    @for (w of weekdays; track $index) {
+      <span>{{ w }}</span>
+    }
+  </div>
+
+  <div class="rm-cal__grid">
+    @for (week of weeks(); track $index) {
+      @for (day of week; track day.dateKey) {
+        <button
+          class="rm-cal__day"
+          [class.rm-cal__day--out]="!day.inMonth"
+          [class.rm-cal__day--today]="day.isToday"
+          [class.rm-cal__day--future]="day.isFuture"
+          [class.rm-cal__day--done]="!!day.record"
+          [style.--rm-cal-accent]="accentColor()"
+          [disabled]="day.isFuture"
+          (click)="selectDay(day)"
+        >
+          <span class="rm-cal__daynum">{{ day.date.getDate() }}</span>
+          @if (day.record) {
+            <span class="rm-cal__badge">{{ day.memberInitial }}</span>
+          }
+        </button>
+      }
+    }
+  </div>
+</div>

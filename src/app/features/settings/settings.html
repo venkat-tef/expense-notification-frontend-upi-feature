@@ -1,0 +1,229 @@
+<div class="rm-page rm-fade-in">
+  <header class="rm-mod-header">
+    <span class="rm-mod-header__icon" style="background:#455a64">
+      <mat-icon>settings</mat-icon>
+    </span>
+    <div>
+      <h1>Settings</h1>
+      <p>Manage the roommates used across Water and Garbage duties.</p>
+    </div>
+  </header>
+
+  @if (memberService.currentMember(); as me) {
+    @if (me.isPaymentApprover) {
+      <div class="rm-card rm-summary-card">
+        <p class="rm-section-title" style="margin-top:0">My UPI ID</p>
+        <p class="rm-upi-hint">
+          Roommates pay you directly via this UPI ID when settling up.
+        </p>
+        @if (editingUpi()) {
+          <div class="rm-summary-row__edit" style="width:100%">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:1">
+              <input matInput placeholder="yourname@bank" [(ngModel)]="upiDraft" (keydown.enter)="saveUpi()" />
+            </mat-form-field>
+            <button mat-icon-button color="primary" [disabled]="savingUpi()" (click)="saveUpi()"><mat-icon>check</mat-icon></button>
+            <button mat-icon-button (click)="editingUpi.set(false)"><mat-icon>close</mat-icon></button>
+          </div>
+        } @else if (me.upiId) {
+          <button class="rm-summary-row__value rm-summary-row__value--editable" (click)="startEditUpi()">
+            {{ me.upiId }}
+            <mat-icon>edit</mat-icon>
+          </button>
+        } @else {
+          <button class="rm-summary-row__value rm-summary-row__value--pending" (click)="startEditUpi()">
+            Add your UPI ID
+          </button>
+        }
+        <span class="rm-success-chip" style="margin-top:10px">
+          <mat-icon>verified</mat-icon>You're the payment approver
+        </span>
+      </div>
+    } @else {
+      <!-- <div class="rm-card rm-add-form__locked">
+        <mat-icon>info</mat-icon>
+        <span>Only the payment approver sets a UPI ID — that's the account everyone pays into. Ask an admin to make you the approver if that should be you.</span>
+      </div> -->
+    }
+  }
+
+  @if (memberService.isAdmin()) {
+    <div class="rm-card rm-add-form" [formGroup]="addForm">
+      <p class="rm-section-title" style="margin-top:0">Add Member</p>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Full Name</mat-label>
+        <input matInput formControlName="name" maxlength="60" />
+        @if (addForm.controls.name.invalid && addForm.controls.name.touched) {
+          <mat-error>Full name is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Email Address</mat-label>
+        <input matInput type="email" formControlName="email" />
+        @if (addForm.controls.email.hasError('required') && addForm.controls.email.touched) {
+          <mat-error>Email is required</mat-error>
+        }
+        @if (addForm.controls.email.hasError('email') && addForm.controls.email.touched) {
+          <mat-error>Enter a valid email address</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Temporary Password</mat-label>
+        <input matInput type="password" formControlName="tempPassword" />
+        @if (addForm.controls.tempPassword.hasError('required') && addForm.controls.tempPassword.touched) {
+          <mat-error>Temporary password is required</mat-error>
+        }
+        @if (addForm.controls.tempPassword.hasError('minlength') && addForm.controls.tempPassword.touched) {
+          <mat-error>Minimum 6 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Phone Number (optional)</mat-label>
+        <input matInput formControlName="phone" maxlength="20" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          <mat-option value="member">Member</mat-option>
+          <mat-option value="admin">Admin</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-add-form__field">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="active">Active</mat-option>
+          <mat-option value="inactive">Inactive</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        class="rm-add-form__btn"
+        [disabled]="saving()"
+        (click)="addMember()"
+      >
+        <mat-icon>person_add</mat-icon>
+        {{ saving() ? 'Adding…' : 'Add Member' }}
+      </button>
+    </div>
+  } @else {
+    <div class="rm-card rm-add-form__locked">
+      <mat-icon>lock</mat-icon>
+      <span>Only Admins can add, edit, or remove members.</span>
+    </div>
+  }
+
+  <p class="rm-section-title">Roommates ({{ memberService.members().length }})</p>
+
+  <div class="rm-member-list">
+    @for (m of memberService.members(); track m.id) {
+      <div class="rm-card rm-member-row">
+        @if (editingId() === m.id) {
+          <div class="rm-member-row__edit" [formGroup]="editForm">
+            <mat-form-field appearance="outline" class="rm-member-row__edit-field">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" maxlength="60" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="rm-member-row__edit-field">
+              <mat-label>Phone</mat-label>
+              <input matInput formControlName="phone" maxlength="20" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="rm-member-row__edit-field">
+              <mat-label>Role</mat-label>
+              <mat-select formControlName="role">
+                <mat-option value="member">Member</mat-option>
+                <mat-option value="admin">Admin</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="rm-member-row__edit-field">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status">
+                <mat-option value="active">Active</mat-option>
+                <mat-option value="inactive">Inactive</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button mat-icon-button color="primary" (click)="saveEdit()" aria-label="Save">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button mat-icon-button (click)="cancelEdit()" aria-label="Cancel">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        } @else {
+          <span class="rm-member-row__avatar">{{ m.name.charAt(0).toUpperCase() }}</span>
+          <div class="rm-member-row__info">
+            <span class="rm-member-row__name">{{ m.name }}</span>
+            @if (m.email) {
+              <span class="rm-member-row__email">{{ m.email }}</span>
+            }
+            @if (m.isPaymentApprover && m.upiId) {
+              <span class="rm-member-row__email">UPI: {{ m.upiId }}</span>
+            }
+          </div>
+          @if (m.role) {
+            <span class="rm-chip" [class.rm-chip--admin]="m.role === 'admin'">{{ m.role }}</span>
+          }
+          @if (m.status) {
+            <span class="rm-chip" [class.rm-chip--inactive]="m.status === 'inactive'">{{ m.status }}</span>
+          }
+          @if (m.isPaymentApprover) {
+            <span class="rm-chip rm-chip--admin">
+              <mat-icon style="font-size:14px; width:14px; height:14px; vertical-align:text-bottom;">verified</mat-icon>
+              Approver
+            </span>
+          } @else if (memberService.isAdmin()) {
+            <button
+              mat-stroked-button
+              color="primary"
+              style="font-size:11px; padding:0 10px; line-height:28px; min-width:0;"
+              [disabled]="savingApproverId() === m.id"
+              (click)="makeApprover(m)"
+            >
+              Make Approver
+            </button>
+          }
+          @if (memberService.isAdmin()) {
+            <button mat-icon-button (click)="startEdit(m)" aria-label="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteMember(m)" aria-label="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        }
+      </div>
+    } @empty {
+      <p class="rm-member-list__empty">No roommates yet. Add your first one above.</p>
+    }
+    @if (memberService.isAdmin()) {
+      <div class="rm-card rm-add-form" [formGroup]="announcementForm">
+        <p class="rm-section-title" style="margin-top:0">Send Announcement</p>
+        <mat-form-field appearance="outline" class="rm-add-form__field">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title" maxlength="60" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="rm-add-form__field">
+          <mat-label>Message</mat-label>
+          <input matInput formControlName="body" maxlength="200" />
+        </mat-form-field>
+        <button mat-flat-button color="primary" class="rm-add-form__btn" (click)="sendAnnouncement()">
+          <mat-icon>campaign</mat-icon> Send to Everyone
+        </button>
+      </div>
+    }
+
+    @if (notificationService.permission() === 'default') {
+      <div class="rm-card rm-add-form__locked">
+        <mat-icon>notifications</mat-icon>
+        <span>Enable notifications to get duty reminders and updates.</span>
+        <button mat-button color="primary" (click)="notificationService.requestPermission()">Enable</button>
+      </div>
+    }
+  </div>
+</div>

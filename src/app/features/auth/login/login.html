@@ -1,0 +1,67 @@
+<div class="rm-login">
+  <mat-card class="rm-login__card">
+    <div class="rm-login__brand">
+  <img
+    class="rm-login__logo"
+    src="icons/icon-72x72.png"
+    alt="Nestly Logo"
+  />
+
+  <h1>Nestly</h1>
+  <p>Sign in to continue</p>
+</div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="rm-login__form">
+      <mat-form-field appearance="outline" class="rm-login__field">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="email" />
+        <mat-icon matSuffix>mail</mat-icon>
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <mat-error>{{ emailErrorMessage }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="rm-login__field">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [type]="hidePassword() ? 'password' : 'text'"
+          formControlName="password"
+          autocomplete="current-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="togglePasswordVisibility()"
+          aria-label="Toggle password visibility"
+        >
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <mat-error>{{ passwordErrorMessage }}</mat-error>
+        }
+      </mat-form-field>
+
+      @if (auth.error()) {
+        <p class="rm-login__error">
+          <mat-icon>error_outline</mat-icon> {{ auth.error() }}
+        </p>
+      }
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="rm-login__submit"
+        [disabled]="auth.loading()"
+      >
+        @if (auth.loading()) {
+          <mat-spinner diameter="20" class="rm-login__spinner" />
+        } @else {
+          Login
+        }
+      </button>
+    </form>
+  </mat-card>
+</div>

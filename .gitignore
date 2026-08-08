@@ -1,0 +1,10 @@
+/node_modules
+/dist
+/out-tsc
+/.angular
+.firebase/
+firebase-debug.log
+.DS_Store
+*.log
+
+functions/node_modules

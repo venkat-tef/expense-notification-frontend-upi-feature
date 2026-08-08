@@ -1,0 +1,117 @@
+<div class="rm-page rm-fade-in">
+<header class="rm-dash-header">
+  <div class="rm-dash-header__text">
+    <!-- <p class="rm-dash-header__eyebrow">
+      Welcome back{{ currentMemberName ? ', ' + currentMemberName : '' }} 👋
+    </p> -->
+
+    <div class="rm-brand">
+      <img src="assets/nestly.png" alt="Nestly" class="rm-brand__logo" />
+    </div>
+
+   <p class="rm-dash-header__sub">
+  Hi @if (currentMemberName) {<span class="rm-dash-header__name">{{ currentMemberName }}</span>}, keep water and garbage duties fair, every day.
+</p>
+  </div>
+
+  <div class="rm-dash-header__actions">
+ <button
+  mat-icon-button
+  class="rm-dash-header__bell"
+  (click)="openNotifications()"
+  aria-label="Notifications"
+>
+  <mat-icon>notifications</mat-icon>
+  @if (notificationService.unreadCount() > 0) {
+    <span class="rm-bell-dot">{{ notificationService.unreadCount() }}</span>
+  }
+</button>
+
+    <button
+      mat-icon-button
+      class="rm-dash-header__logout"
+      (click)="logout()"
+      aria-label="Logout"
+      matTooltip="Logout"
+    >
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
+</header>
+
+  <div class="rm-dash-grid">
+    @for (card of cards; track card.path; let i = $index) {
+      <button
+        class="rm-card rm-card--interactive rm-dash-card rm-pop"
+        [style.animation-delay.ms]="i * 60"
+        [style.--rm-card-color]="card.color"
+        (click)="open(card.path)"
+      >
+        <span class="rm-dash-card__icon">
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </span>
+        <span class="rm-dash-card__title">{{ card.title }}</span>
+        <span class="rm-dash-card__subtitle">{{ card.subtitle }}</span>
+
+        @if (card.path === '/water' && waterDoneToday()) {
+          <span class="rm-success-chip rm-dash-card__chip"><mat-icon>check</mat-icon>Done today</span>
+        }
+        @if (card.path === '/cooking' && cookingDoneToday()) {
+          <span class="rm-success-chip rm-dash-card__chip"><mat-icon>check</mat-icon>Done today</span>
+        }
+      </button>
+    }
+  </div>
+  <br/>
+
+  <div class="rm-card rm-next-turn" [style.--rm-accent]="waterAccent">
+    <div class="rm-next-turn__label">
+      <mat-icon>arrow_forward</mat-icon>
+      Next Water Turn
+    </div>
+    @if (nextWaterMember; as next) {
+      <div class="rm-next-turn__row">
+        <div class="rm-next-turn__name">{{ next.name }}</div>
+        @if (waterDoneToday()) {
+          <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
+        } @else {
+          <button class="rm-next-turn__skip" [disabled]="isSkippingWater()" (click)="skipWater()">
+            <mat-icon>skip_next</mat-icon> Skip
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="rm-next-turn__name rm-next-turn__name--empty">Add roommates to start</div>
+    }
+  </div>
+
+  <div class="rm-card rm-next-turn" [style.--rm-accent]="cookingAccent">
+    <div class="rm-next-turn__label">
+      <mat-icon>arrow_forward</mat-icon>
+      Next Garbage Turn
+    </div>
+    @if (nextCookingMember; as next) {
+      <div class="rm-next-turn__row">
+        <div class="rm-next-turn__name">{{ next.name }}</div>
+        @if (cookingDoneToday()) {
+          <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
+        } @else {
+          <button class="rm-next-turn__skip" [disabled]="isSkippingCooking()" (click)="skipCooking()">
+            <mat-icon>skip_next</mat-icon> Skip
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="rm-next-turn__name rm-next-turn__name--empty">Add roommates to start</div>
+    }
+  </div>
+
+  <!-- <p class="rm-section-title">Roommates</p>
+  <div class="rm-card rm-dash-members">
+    @for (m of memberService.members(); track m.id) {
+      <span class="rm-dash-members__chip">{{ m.name }}</span>
+    } @empty {
+      <span class="rm-dash-members__empty">No roommates yet — add some in Settings.</span>
+    }
+  </div> -->
+</div>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Nestly</title>
+  <base href="/"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f7fa"/> 
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Nestly"/>
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Material+Icons&amp;display=swap" rel="stylesheet"/>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#FFFFFF"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<style>
+  html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #f5f7fa;
+}
+
+/* .rm-boot-splash {
+  min-height: 100dvh;
+  width: 100%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+} */
+  .rm-boot-splash {
+   min-height: 100dvh;
+    width: 100%;
+    background: #f5f7fa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Manrope', sans-serif;
+  }
+  .rm-boot-splash__wave {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    display: block;
+  }
+  .rm-boot-splash__logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    position: relative;
+    z-index: 1;
+  }
+  .rm-boot-splash__title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #111;
+    margin: 0;
+    letter-spacing: -0.01em;
+    position: relative;
+    z-index: 1;
+  }
+  .rm-boot-splash__tagline {
+    font-size: 14px;
+    color: #666;
+    margin-top: 6px;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+</style>
+</head>
+<body class="mat-typography">
+  <app-root>
+    <!-- <div class="rm-boot-splash">
+     
+      <img class="rm-boot-splash__logo" src="icons/icon-192x192.png" alt="Nestly" />
+      <p class="rm-boot-splash__title">Nestly</p>
+      <p class="rm-boot-splash__tagline">Smart. Simple. Connected.</p>
+    </div> -->
+  </app-root>
+  <noscript>Please enable JavaScript to continue using this application.</noscript>
+</body>
+</html>

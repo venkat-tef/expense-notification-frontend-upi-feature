@@ -1,0 +1,236 @@
+<div class="rm-page rm-fade-in rm-expenses">
+<header class="rm-mod-header">
+  <div class="rm-mod-header__left">
+    <span class="rm-mod-header__icon" style="background:#7b1fa2">
+      <mat-icon>payments</mat-icon>
+    </span>
+
+    <div>
+      <h1>Expenses</h1>
+      <p>Track spending & settle up, month by month.</p>
+    </div>
+  </div>
+
+  <button class="rm-add-btn" (click)="openAddExpense()" aria-label="Add expense">
+    <mat-icon>add</mat-icon>
+  </button>
+</header>
+
+  <div class="rm-month-select">
+    @for (m of monthOptions(); track m) {
+      <button class="rm-month-chip" [class.rm-month-chip--active]="m === selectedMonth()" (click)="selectMonth(m)">
+        {{ monthLabel(m) }}
+      </button>
+    }
+  </div>
+
+  <div class="rm-card rm-summary-card">
+    <p class="rm-section-title" style="margin-top:0">{{ monthLabel(selectedMonth()) }} Summary</p>
+
+    <div class="rm-summary-row">
+      <span class="rm-summary-row__label">Room Rent</span>
+      @if (editingRoomRent()) {
+        <div class="rm-summary-row__edit">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <input matInput type="number" min="0" step="0.01" [(ngModel)]="roomRentDraft" (keydown.enter)="saveRoomRent()" />
+          </mat-form-field>
+          <button mat-icon-button (click)="saveRoomRent()"><mat-icon>check</mat-icon></button>
+          <button mat-icon-button (click)="editingRoomRent.set(false)"><mat-icon>close</mat-icon></button>
+        </div>
+      } @else {
+        <button class="rm-summary-row__value rm-summary-row__value--editable" (click)="startEditRoomRent()">
+          ₹{{ summary().roomRent | number: '1.0-2' }}
+          <mat-icon>edit</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="rm-summary-row">
+      <span class="rm-summary-row__label">Electricity Bill</span>
+      @if (editingElectricity()) {
+        <div class="rm-summary-row__edit">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <input matInput type="number" min="0" step="0.01" [(ngModel)]="electricityDraft" (keydown.enter)="saveElectricity()" />
+          </mat-form-field>
+          <button mat-icon-button (click)="saveElectricity()"><mat-icon>check</mat-icon></button>
+          <button mat-icon-button (click)="editingElectricity.set(false)"><mat-icon>close</mat-icon></button>
+        </div>
+      } @else if (summary().electricityBillSet) {
+        <button class="rm-summary-row__value rm-summary-row__value--editable" (click)="startEditElectricity()">
+          ₹{{ summary().electricityBill | number: '1.0-2' }}
+          <mat-icon>edit</mat-icon>
+        </button>
+      } @else {
+        <button class="rm-summary-row__value rm-summary-row__value--pending" (click)="startEditElectricity()">
+          Add bill
+        </button>
+      }
+    </div>
+
+    <div class="rm-summary-row">
+      <span class="rm-summary-row__label">Other Expenses</span>
+      <span class="rm-summary-row__value">₹{{ otherExpensesTotal() | number: '1.0-2' }}</span>
+    </div>
+
+    <div class="rm-summary-row rm-summary-row--total">
+      <span class="rm-summary-row__label">Grand Total</span>
+      <span class="rm-summary-row__value">₹{{ grandTotal() | number: '1.0-2' }}</span>
+    </div>
+
+    @if (summary().settlementCompleted) {
+      <span class="rm-success-chip" style="margin-top:10px">
+        <mat-icon>check</mat-icon>Settlement completed
+      </span>
+    } @else if (summary().electricityBillSet) {
+      <button class="rm-mark-settled" (click)="toggleSettlementCompleted()">Mark settlement completed</button>
+    }
+  </div>
+
+  <p class="rm-section-title">Settlement</p>
+  @if (!summary().electricityBillSet) {
+    <div class="rm-card rm-waiting-card">
+      <mat-icon>hourglass_top</mat-icon>
+      <p>Waiting for electricity bill to finalize this month's settlement.</p>
+    </div>
+  } @else if (!memberService.members().length) {
+    <div class="rm-card rm-waiting-card">
+      <mat-icon>group_off</mat-icon>
+      <p>Add roommates in Settings to see settlement shares.</p>
+    </div>
+  } @else {
+    <div class="rm-settlement-grid">
+      @for (s of settlement(); track s.memberId) {
+        <div class="rm-card rm-settlement-card">
+          <div class="rm-settlement-card__avatar">{{ s.memberName.charAt(0) }}</div>
+          <div class="rm-settlement-card__name">{{ s.memberName }}</div>
+          <div class="rm-settlement-card__row"><span>Paid</span><span>₹{{ s.paid | number: '1.0-2' }}</span></div>
+          <div class="rm-settlement-card__row"><span>Share</span><span>₹{{ s.share | number: '1.0-2' }}</span></div>
+          <div class="rm-settlement-card__row">
+            <span>Remaining</span>
+            <span>₹{{ (s.remaining < 0 ? -s.remaining : s.remaining) | number: '1.0-2' }}</span>
+          </div>
+          @if (s.remaining > 0.01) {
+            @switch (paymentStatusFor(s.memberId)) {
+              @case ('settled') {
+                <div class="rm-settlement-card__status rm-settlement-card__status--settled">
+                  <mat-icon>check_circle</mat-icon>Settled
+                </div>
+              }
+              @case ('payment_pending_confirmation') {
+                <div class="rm-settlement-card__status rm-settlement-card__status--confirm">
+                  <mat-icon>hourglass_top</mat-icon>Payment Pending Confirmation
+                </div>
+                @if (canConfirm(s.memberId)) {
+                  <button class="rm-upi-btn rm-upi-btn--confirm" (click)="confirmReceived(s)">
+                    <mat-icon>verified</mat-icon>Confirm Received
+                  </button>
+                }
+              }
+              @default {
+                <div class="rm-settlement-card__status rm-settlement-card__status--owe">
+                  You Need to Pay ₹{{ s.remaining | number: '1.0-2' }}
+                </div>
+                @if (isApproverSelf(s.memberId)) {
+                  <button class="rm-upi-btn rm-upi-btn--confirm" (click)="settleOwnShare(s)">
+                    <mat-icon>check_circle</mat-icon>Settle My Share
+                  </button>
+                } @else if (isSelf(s.memberId)) {
+                  <div class="rm-upi-actions">
+                    <button class="rm-upi-btn rm-upi-btn--pay" (click)="payViaUpi(s)">
+                      <mat-icon>account_balance_wallet</mat-icon>Pay via UPI
+                    </button>
+                    <button class="rm-upi-btn rm-upi-btn--paid" (click)="markPaid(s)">
+                      <mat-icon>done</mat-icon>I've Paid
+                    </button>
+                  </div>
+                }
+              }
+            }
+          } @else if (s.remaining < -0.01) {
+            <div class="rm-settlement-card__status rm-settlement-card__status--receive">
+              You Should Receive ₹{{ -s.remaining | number: '1.0-2' }}
+            </div>
+          } @else {
+            <div class="rm-settlement-card__status rm-settlement-card__status--settled">Settled</div>
+          }
+        </div>
+      }
+    </div>
+  }
+<div class="rm-expense-toolbar">
+  <p class="rm-section-title">Expenses</p>
+
+  <button
+    class="rm-filter-btn"
+    [matMenuTriggerFor]="memberMenu">
+
+    <mat-icon>person</mat-icon>
+
+    <span>
+      {{ selectedMemberFilter() ? memberName(selectedMemberFilter()) : 'All' }}
+    </span>
+
+    <mat-icon>keyboard_arrow_down</mat-icon>
+  </button>
+
+  <mat-menu #memberMenu="matMenu">
+
+    <button mat-menu-item (click)="selectedMemberFilter.set('')">
+      All
+    </button>
+
+    @for (member of memberService.members(); track member.id) {
+      <button
+        mat-menu-item
+        (click)="selectedMemberFilter.set(member.id)">
+        {{ member.name }}
+      </button>
+    }
+
+  </mat-menu>
+</div>
+
+  @if (!monthExpenses().length) {
+    <div class="rm-card rm-empty-state">
+      <mat-icon>receipt_long</mat-icon>
+      <p>No expenses yet for {{ monthLabel(selectedMonth()) }}.</p>
+      <p class="rm-empty-state__sub">Tap the + button to add the first one.</p>
+    </div>
+  } @else {
+    <div class="rm-expense-list">
+      @for (e of monthExpenses(); track e.id) {
+        <div class="rm-card rm-expense-card">
+          <div class="rm-expense-card__icon">
+            <mat-icon>{{ categoryIcons[e.category] }}</mat-icon>
+          </div>
+          <div class="rm-expense-card__body">
+            <div class="rm-expense-card__top">
+              <span class="rm-expense-card__title">{{ e.title }}</span>
+              <span class="rm-expense-card__amount">₹{{ e.amount | number: '1.0-2' }}</span>
+            </div>
+            <div class="rm-expense-card__meta">
+              {{ e.category }} · Paid by {{ memberName(e.paidByMemberId) }} · {{ formatDate(e.expenseDate) }}
+            </div>
+            @if (e.notes) {
+              <div class="rm-expense-card__notes">{{ e.notes }}</div>
+            }
+            <div class="rm-expense-card__actions">
+              @if (e.billImageUrl; as imgUrl) {
+                <button class="rm-expense-card__thumb" (click)="viewImage(imgUrl)">
+                  <img [src]="imgUrl" alt="Bill" />
+                </button>
+              }
+              <span class="rm-expense-card__spacer"></span>
+              <button mat-icon-button (click)="openEditExpense(e)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button (click)="deleteExpense(e)"><mat-icon>delete</mat-icon></button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- <button class="rm-fab" (click)="openAddExpense()" aria-label="Add expense">
+    <mat-icon>add</mat-icon>
+  </button> -->
+</div>

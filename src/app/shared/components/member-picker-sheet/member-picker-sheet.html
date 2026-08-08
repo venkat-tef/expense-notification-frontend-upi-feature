@@ -1,0 +1,30 @@
+<div class="rm-sheet">
+  <div class="rm-sheet__handle"></div>
+  <h3 class="rm-sheet__title">{{ data.dateLabel }}</h3>
+  <p class="rm-sheet__subtitle">Tap a name to mark it done — saves instantly.</p>
+
+  <mat-nav-list class="rm-sheet__list">
+    @for (member of data.members; track member.id) {
+      <button
+        mat-list-item
+        class="rm-sheet__item"
+        [class.rm-sheet__item--selected]="member.id === data.selectedMemberId"
+        (click)="select(member.id)"
+      >
+        <span class="rm-sheet__avatar" [style.background]="data.accentColor">
+          {{ member.name.charAt(0).toUpperCase() }}
+        </span>
+        <span class="rm-sheet__name">{{ member.name }}</span>
+        @if (member.id === data.selectedMemberId) {
+          <mat-icon class="rm-sheet__check">check_circle</mat-icon>
+        }
+      </button>
+    }
+  </mat-nav-list>
+
+  @if (data.selectedMemberId) {
+    <button class="rm-sheet__clear" (click)="clear()">
+      <mat-icon>close</mat-icon> Clear entry for this day
+    </button>
+  }
+</div>

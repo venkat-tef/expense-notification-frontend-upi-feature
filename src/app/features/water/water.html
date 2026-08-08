@@ -1,0 +1,37 @@
+<div class="rm-page rm-fade-in">
+  <header class="rm-mod-header">
+    <span class="rm-mod-header__icon" [style.background]="accent">
+      <mat-icon>water_drop</mat-icon>
+    </span>
+    <div>
+      <h1>Water</h1>
+      <p>Tap any day to mark who filled the water.</p>
+    </div>
+  </header>
+
+  <!-- <div class="rm-card rm-next-turn" [style.--rm-accent]="accent">
+    <div class="rm-next-turn__label">
+      <mat-icon>arrow_forward</mat-icon>
+      Next Water Turn
+    </div>
+    @if (nextMember; as next) {
+      <div class="rm-next-turn__row">
+        <div class="rm-next-turn__name">{{ next.name }}</div>
+        <button class="rm-next-turn__skip" (click)="skipMember()">
+          <mat-icon>skip_next</mat-icon> Skip
+        </button>
+      </div>
+    } @else {
+      <div class="rm-next-turn__name rm-next-turn__name--empty">Add roommates to start</div>
+    }
+  </div> -->
+
+  <div class="rm-card rm-cal-wrap">
+    <app-task-calendar
+      [members]="memberService.members()"
+      [records]="waterService.records()"
+      [accentColor]="accent"
+      (daySelected)="onDaySelected($event)"
+    />
+  </div>
+</div>

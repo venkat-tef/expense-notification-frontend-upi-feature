@@ -1,0 +1,12 @@
+<nav class="rm-bottom-nav">
+  @for (item of items; track item.path) {
+    <a
+      class="rm-bottom-nav__item"
+      [routerLink]="item.path"
+      routerLinkActive="rm-bottom-nav__item--active"
+    >
+      <mat-icon>{{ item.icon }}</mat-icon>
+      <span>{{ item.label }}</span>
+    </a>
+  }
+</nav>
