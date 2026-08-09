@@ -1,6 +1,5 @@
-
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -98,46 +97,21 @@ export const onMemberCreated = onDocumentCreated('members/{uid}', async (event) 
 });
 
 // ---------- FEATURE 4: Admin Announcement ----------
+// NO-OP as of the notification-reliability fix: announcements used to depend entirely
+// on THIS Cloud Function (a separate deployment target from the Render backend) to send
+// the push and write bell entries — Cloud Functions v2 cold-starts are what caused
+// announcements to "arrive late," and if this function wasn't deployed/billing-enabled
+// they never arrived at all. AnnouncementService.create() (frontend) now calls
+// NotificationService.sendAnnouncement() directly the moment the announcement doc is
+// created, which goes through the same already-reliable `notifications` collection +
+// Render announcementListener.js pipeline every other notification type already uses.
+// This trigger is left exported (rather than removed) purely so `firebase deploy` and
+// any existing monitoring/IAM around it don't need to change — but it must stay a no-op.
+// Re-enabling its push/batch-write logic below would send every announcement TWICE.
 export const onAnnouncementCreated = onDocumentCreated(
   'announcements/{id}',
-  async (event) => {
-    const a = event.data?.data();
-    if (!a) return;
-
-    // NEW — draft/inactive announcements are saved but never pushed.
-    if (a.status === 'inactive') return;
-
-    const ids = await allMemberIds();
-
-    // Existing behavior — unchanged.
-    const tokens = await tokensForMembers(ids);
-    await send(
-      tokens,
-      a.title,
-      a.body,
-      { type: 'announcement', url: '/dashboard' }
-    );
-
-    // NEW — bell entries, one doc per recipient, matching NotificationService's schema
-    // exactly (targetMemberId, readBy: [], createdAt) so the existing notification-sheet
-    // component picks these up with zero frontend changes.
-    const batch = db.batch();
-
-    for (const memberId of ids) {
-      const ref = db.collection('notifications').doc();
-
-      batch.set(ref, {
-        type: 'announcement_bell',
-        title: a.title,
-        body: a.body,
-        url: '/dashboard',
-        targetMemberId: memberId,
-        createdAt: FieldValue.serverTimestamp(),
-        readBy: [],
-      });
-    }
-
-    await batch.commit();
+  async () => {
+    return;
   }
 );
 
@@ -295,4 +269,3 @@ export const dailyReminders = onSchedule(
     }
   }
 );
-

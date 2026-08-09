@@ -17,10 +17,14 @@
   --rm-radius-sm: 10px;
   --rm-shadow: 0 2px 10px rgba(20, 30, 28, 0.06), 0 1px 2px rgba(20, 30, 28, 0.04);
   --rm-shadow-hover: 0 8px 24px rgba(20, 30, 28, 0.12);
+
   color-scheme: light;
 }
 
 
+/* ---------------------------------------------------------------------------
+   OS dark-mode fallback
+   --------------------------------------------------------------------------- */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -37,55 +41,154 @@
     --rm-border: #2c3532;
     --rm-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
     --rm-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+
     color-scheme: dark;
   }
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+
+/* ---------------------------------------------------------------------------
+   ROOT / PAGE BACKGROUND
+   ---------------------------------------------------------------------------
+   IMPORTANT:
+   Keep html, body and app-root on the SAME theme background.
+
+   This prevents the small gray/white strip that was visible above the
+   Midnight/dark login screen.
+
+   Do not remove these backgrounds.
+   --------------------------------------------------------------------------- */
+
+html {
   height: 100%;
+  width: 100%;
+
   margin: 0;
   padding: 0;
+
+  background-color: var(--rm-bg);
+  color: var(--rm-text);
+
+  /* Prevent browser from applying its own light form-control scheme */
+  color-scheme: light;
+
+  /*
+   * iOS safe-area / standalone PWA support.
+   * The root itself must use the selected theme background.
+   */
+  overscroll-behavior: none;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+
+  margin: 0;
+  padding: 0;
+
   /*
    * iOS home-screen (standalone) PWAs rubber-band/bounce whenever the
-   * *document* itself is the scrolling element — even by a sub-pixel
-   * amount (safe-area insets, 100vh vs the real dynamic viewport, etc.)
-   * there is nothing meaningful to intercept the gesture the way Safari's
-   * own browser chrome normally would. Pinning html/body so they can never
-   * scroll, and doing all scrolling inside app-root's .rm-app-scroll
-   * container instead, removes the bounce on pages with no real content
-   * while leaving normal scrolling intact for pages that do overflow.
+   * document itself is the scrolling element.
+   *
+   * Keep html/body locked and allow scrolling inside app-root's
+   * .rm-app-scroll container.
    */
   overflow: hidden;
   position: fixed;
   overscroll-behavior: none;
-  width: 100%;
+
+  background-color: var(--rm-bg);
+  color: var(--rm-text);
 }
 
 body {
   font-family: 'Manrope', 'Roboto', sans-serif;
-  background: var(--rm-bg);
+
+  /*
+   * IMPORTANT:
+   * Use background-color instead of a fixed color so every selected theme
+   * controls the complete page background.
+   */
+  background-color: var(--rm-bg);
   color: var(--rm-text);
+
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
 }
 
+
+/*
+ * Angular root must also inherit the active theme background.
+ *
+ * This is important when the login screen or another component does not
+ * occupy the entire viewport.
+ */
 app-root {
   display: block;
+
+  width: 100%;
   height: 100%;
+
+  min-height: 100%;
+
+  background-color: var(--rm-bg);
+  color: var(--rm-text);
 }
 
-h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: -0.01em; margin: 0; }
-p { margin: 0; }
 
-// ---------------------------------------------------------------------------
-// App themes — selected in Settings > Appearance (ThemeService).
-// Every screen already reads color exclusively through the --rm-* custom
-// properties above, so each block below is a full re-skin of the whole app —
-// no per-component changes needed. `[data-theme="..."]` beats the plain
-// `:root` (and the `prefers-color-scheme: dark` block) on specificity, so a
-// chosen theme always wins over the OS light/dark preference.
-// ---------------------------------------------------------------------------
+/*
+ * Keep the root application background behind all child components.
+ *
+ * This does NOT affect cards/surfaces because they already use
+ * --rm-surface.
+ */
+app-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+
+  background-color: var(--rm-bg);
+
+  pointer-events: none;
+  z-index: -1;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Typography
+   --------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+
+/* ---------------------------------------------------------------------------
+   App themes — selected in Settings > Appearance (ThemeService).
+   Every screen already reads color exclusively through the --rm-* custom
+   properties above, so each block below is a full re-skin of the whole app —
+   no per-component changes needed.
+
+   [data-theme="..."] beats the plain :root (and the prefers-color-scheme: dark
+   block) on specificity, so a chosen theme always wins over the OS light/dark
+   preference.
+   --------------------------------------------------------------------------- */
 
 :root[data-theme='emerald-gold'] {
   --rm-primary: #0f6e56;
@@ -99,6 +202,7 @@ p { margin: 0; }
   --rm-text: #1f2420;
   --rm-text-muted: #6b6255;
   --rm-border: #e7dfc9;
+
   color-scheme: light;
 }
 
@@ -114,6 +218,7 @@ p { margin: 0; }
   --rm-text: #16202e;
   --rm-text-muted: #5b6472;
   --rm-border: #e2dfd6;
+
   color-scheme: light;
 }
 
@@ -129,6 +234,7 @@ p { margin: 0; }
   --rm-text: #22252a;
   --rm-text-muted: #6b6259;
   --rm-border: #e4ded5;
+
   color-scheme: light;
 }
 
@@ -144,6 +250,7 @@ p { margin: 0; }
   --rm-text: #2a1418;
   --rm-text-muted: #7a6560;
   --rm-border: #e8ddd0;
+
   color-scheme: light;
 }
 
@@ -159,23 +266,35 @@ p { margin: 0; }
   --rm-text: #262b28;
   --rm-text-muted: #6c766f;
   --rm-border: #daddd9;
+
   color-scheme: light;
 }
+
+
+/* ---------------------------------------------------------------------------
+   Pages
+   --------------------------------------------------------------------------- */
 
 .rm-page {
   max-width: 640px;
   margin: 0 auto;
   padding: 20px 16px 96px;
+
   /*
    * Relative to .rm-app-scroll (which has the real, explicit height), not
-   * to the viewport. min-height: 100vh here was taller than the actual
-   * visible area on iOS (no address bar in standalone mode, safe-area
-   * insets, dynamic toolbar, etc.), which was enough overflow on its own
-   * to make otherwise-static pages draggable/bouncy.
+   * to the viewport.
    */
   min-height: 100%;
   box-sizing: border-box;
+
+  background-color: transparent;
+  color: var(--rm-text);
 }
+
+
+/* ---------------------------------------------------------------------------
+   Cards
+   --------------------------------------------------------------------------- */
 
 .rm-card {
   background: var(--rm-surface);
@@ -188,89 +307,154 @@ p { margin: 0; }
 .rm-card--interactive {
   cursor: pointer;
 }
+
 .rm-card--interactive:hover,
 .rm-card--interactive:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--rm-shadow-hover);
 }
+
 .rm-card--interactive:active {
   transform: translateY(0) scale(0.98);
 }
+
+
+/* ---------------------------------------------------------------------------
+   Success chip
+   --------------------------------------------------------------------------- */
 
 .rm-success-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+
   background: var(--rm-success-bg);
   color: var(--rm-success);
+
   font-weight: 700;
   font-size: 12px;
+
   padding: 3px 9px;
   border-radius: 999px;
 }
 
+
+/* ---------------------------------------------------------------------------
+   Animations
+   --------------------------------------------------------------------------- */
+
 .rm-fade-in {
   animation: rmFadeIn 320ms ease both;
 }
+
 @keyframes rmFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .rm-pop {
-  animation: rmPop 260ms cubic-bezier(.34,1.56,.64,1) both;
+  animation: rmPop 260ms cubic-bezier(.34, 1.56, .64, 1) both;
 }
+
 @keyframes rmPop {
-  from { opacity: 0; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Section title
+   --------------------------------------------------------------------------- */
 
 .rm-section-title {
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+
   color: var(--rm-text-muted);
+
   margin: 24px 0 10px 4px;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: var(--rm-border); border-radius: 8px; }
+
+/* ---------------------------------------------------------------------------
+   Scrollbar
+   --------------------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rm-border);
+  border-radius: 8px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Snackbar
+   --------------------------------------------------------------------------- */
 
 .mat-mdc-snack-bar-container.rm-snack-success .mdc-snackbar__surface {
   background: var(--rm-success) !important;
 }
 
-// Used by the expense bill image preview dialog — full-bleed, no default
-// Material dialog padding/background so the image can fill the screen.
+
+/* ---------------------------------------------------------------------------
+   Expense image dialog
+   --------------------------------------------------------------------------- */
+
 .rm-image-dialog-panel .mdc-dialog__surface {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
+
   max-width: 100vw !important;
   max-height: 100vh !important;
+
   border-radius: 0 !important;
 }
+
 .rm-image-dialog-panel .mat-mdc-dialog-container {
   --mat-dialog-container-max-width: 100vw;
 }
 
-// PATCH — append this block to the END of src/styles.scss (after the existing
-// .rm-image-dialog-panel rules). These are shared utility classes used across the new
-// Members / Announcements / Configuration tabs and their dialogs, pulled out here so no
-// individual component has to redefine them.
+
+/* ---------------------------------------------------------------------------
+   Shared utility classes
+   --------------------------------------------------------------------------- */
 
 .rm-add-member-btn {
   height: 38px;
   border-radius: 10px;
   white-space: nowrap;
-  mat-icon { margin-right: 2px; }
+
+  mat-icon {
+    margin-right: 2px;
+  }
 }
 
 .rm-members-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   margin-bottom: 10px;
   gap: 8px;
 }
@@ -278,135 +462,315 @@ p { margin: 0; }
 .rm-status-chip {
   font-size: 11.5px;
   font-weight: 700;
+
   padding: 3px 10px;
   border-radius: 999px;
+
   background: var(--rm-success-bg);
   color: var(--rm-success);
+
   flex-shrink: 0;
   white-space: nowrap;
 }
+
 .rm-status-chip--inactive {
   background: var(--rm-surface-alt);
   color: var(--rm-text-muted);
 }
 
-.rm-menu-danger { color: #c62828; }
+.rm-menu-danger {
+  color: #c62828;
+}
 
 .rm-dialog-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
+
   min-width: min(420px, 82vw);
 }
-.rm-full { width: 100%; }
 
-.rm-spin { animation: rmSpin 900ms linear infinite; }
-@keyframes rmSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.rm-full {
+  width: 100%;
 }
 
-// --- Material dark-mode override patch -------------------------------------------------
-//
-// WHY THIS EXISTS: angular.json imports Angular Material's static, light-only prebuilt
-// theme (@angular/material/prebuilt-themes/azure-blue.css). Every <mat-*> component —
-// dialogs, tables, tabs, form fields, selects, menus — renders from THAT theme, which
-// knows nothing about the app's own --rm-* custom properties. Your own .rm-card/.rm-page
-// elements already follow dark mode correctly; Material chrome never has, which is why
-// dialogs stay white and table/tab text goes near-invisible on a dark background. This
-// patch re-colors just the Material surfaces/text using the same --rm-* tokens everything
-// else already uses, so a Material dialog or table always matches whatever theme (or OS
-// dark mode) is currently active.
-//
-// Two triggers, both included:
-//   1. @media (prefers-color-scheme: dark) — fires even before ThemeService's effect()
-//      has run (e.g. first paint, or a user who never opens Settings), matching the
-//      existing dark-mode media query already in this file.
-//   2. :root.rm-dark — the explicit class ThemeService now toggles when the ACTIVE theme
-//      (not necessarily the OS setting) is dark. Higher specificity than the media query,
-//      so an explicit theme choice always wins once ThemeService has run. See the README
-//      note about injecting ThemeService in app.ts so this applies from first paint, not
-//      only after visiting Settings.
-//
-// NOT covered: Material's own primary/accent palette (currently Azure blue, not your
-// --rm-primary teal) — that's a color-mismatch, not a visibility bug, and fixing it
-// properly means replacing the prebuilt theme with Angular Material's newer token-based
-// theming API. Flagging it, not fixing it here, since it's a separate, bigger change.
+.rm-spin {
+  animation: rmSpin 900ms linear infinite;
+}
+
+@keyframes rmSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Material dark-mode override patch
+   --------------------------------------------------------------------------- */
 
 @mixin rm-material-dark-overrides {
-  // Dialogs (Add/Edit Member, Add/Edit Announcement, Add/Edit Expense, etc.)
+  /* Dialogs */
   .mat-mdc-dialog-container .mdc-dialog__surface {
     background-color: var(--rm-surface) !important;
   }
-  .mat-mdc-dialog-title, .mat-mdc-dialog-content, .mat-mdc-dialog-actions {
+
+  .mat-mdc-dialog-title,
+  .mat-mdc-dialog-content,
+  .mat-mdc-dialog-actions {
     color: var(--rm-text);
   }
-  .mat-mdc-dialog-title { color: var(--rm-text) !important; }
 
-  // Form fields (inputs, textareas) — outline, label, typed text, placeholder
-  .mat-mdc-text-field-wrapper { background-color: transparent; }
+  .mat-mdc-dialog-title {
+    color: var(--rm-text) !important;
+  }
+
+
+  /* Form fields */
+  .mat-mdc-text-field-wrapper {
+    background-color: transparent;
+  }
+
   .mdc-notched-outline__leading,
   .mdc-notched-outline__notch,
   .mdc-notched-outline__trailing {
     border-color: var(--rm-border) !important;
   }
+
   .mat-mdc-form-field .mdc-floating-label,
   .mat-mdc-form-field-hint {
     color: var(--rm-text-muted) !important;
   }
+
   .mat-mdc-input-element {
     color: var(--rm-text) !important;
     caret-color: var(--rm-primary);
   }
-  .mat-mdc-input-element::placeholder { color: var(--rm-text-muted) !important; }
 
-  // Select — closed value + dropdown panel + options
-  .mat-mdc-select-value-text, .mat-mdc-select-arrow { color: var(--rm-text) !important; }
-  .mat-mdc-select-panel, .cdk-overlay-pane .mat-mdc-select-panel {
+  .mat-mdc-input-element::placeholder {
+    color: var(--rm-text-muted) !important;
+  }
+
+
+  /* Select */
+  .mat-mdc-select-value-text,
+  .mat-mdc-select-arrow {
+    color: var(--rm-text) !important;
+  }
+
+  .mat-mdc-select-panel,
+  .cdk-overlay-pane .mat-mdc-select-panel {
     background: var(--rm-surface) !important;
   }
 
-  // Options / menu items (select dropdowns AND the ⋮ actions menu)
-  .mat-mdc-option, .mat-mdc-menu-panel, .mat-mdc-menu-item {
+
+  /* Options / menus */
+  .mat-mdc-option,
+  .mat-mdc-menu-panel,
+  .mat-mdc-menu-item {
     background: var(--rm-surface) !important;
     color: var(--rm-text) !important;
   }
+
   .mat-mdc-option:hover:not(.mdc-list-item--disabled),
   .mat-mdc-menu-item:hover:not([disabled]) {
     background: var(--rm-surface-alt) !important;
   }
-  .mat-mdc-option .mat-icon, .mat-mdc-menu-item .mat-icon { color: var(--rm-text-muted); }
 
-  // Tables (History page)
-  .mat-mdc-table { background: transparent; }
-  .mat-mdc-header-cell { color: var(--rm-text-muted) !important; }
-  .mat-mdc-cell { color: var(--rm-text) !important; }
-  .mat-mdc-header-row, .mat-mdc-row { border-bottom-color: var(--rm-border) !important; }
+  .mat-mdc-option .mat-icon,
+  .mat-mdc-menu-item .mat-icon {
+    color: var(--rm-text-muted);
+  }
 
-  // Tabs (History's Water/Garbage tabs)
-  .mdc-tab__text-label { color: var(--rm-text-muted) !important; }
-  .mdc-tab--active .mdc-tab__text-label { color: var(--rm-primary) !important; }
-  .mat-mdc-tab-header { border-bottom-color: var(--rm-border); }
 
-  // Plain (non-color) buttons and icon buttons picking up default Material ink color
-  .mat-mdc-button:not([color]), .mat-mdc-icon-button:not([color]) {
+  /* Tables */
+  .mat-mdc-table {
+    background: transparent;
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--rm-text-muted) !important;
+  }
+
+  .mat-mdc-cell {
+    color: var(--rm-text) !important;
+  }
+
+  .mat-mdc-header-row,
+  .mat-mdc-row {
+    border-bottom-color: var(--rm-border) !important;
+  }
+
+
+  /* Tabs */
+  .mdc-tab__text-label {
+    color: var(--rm-text-muted) !important;
+  }
+
+  .mdc-tab--active .mdc-tab__text-label {
+    color: var(--rm-primary) !important;
+  }
+
+  .mat-mdc-tab-header {
+    border-bottom-color: var(--rm-border);
+  }
+
+
+  /* Plain buttons / icon buttons */
+  .mat-mdc-button:not([color]),
+  .mat-mdc-icon-button:not([color]) {
     color: var(--rm-text);
   }
-  .mat-mdc-icon-button .mat-icon { color: inherit; }
 
-  // Snackbar default surface (success variant already handled above)
+  .mat-mdc-icon-button .mat-icon {
+    color: inherit;
+  }
+
+
+  /* Snackbar */
   .mat-mdc-snack-bar-container .mdc-snackbar__surface {
     background: var(--rm-text) !important;
     color: var(--rm-bg) !important;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  // Only the pre-JS fallback: applies until ThemeService has run and set an explicit
-  // rm-dark/rm-light class. Once either class is present, these two rules below (:root.rm-dark)
-  // are the sole source of truth — an explicit light theme pick, even with the OS in dark
-  // mode, is respected instead of being overridden by this media query.
-  :root:not(.rm-dark):not(.rm-light) { @include rm-material-dark-overrides; }
-}
-:root.rm-dark { @include rm-material-dark-overrides; }
 
+/* ---------------------------------------------------------------------------
+   OS dark-mode Material fallback
+   --------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.rm-dark):not(.rm-light) {
+    @include rm-material-dark-overrides;
+  }
+}
+
+:root.rm-dark {
+  @include rm-material-dark-overrides;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Theme-aware Angular Material components
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-card {
+  background: var(--rm-surface) !important;
+  color: var(--rm-text) !important;
+  border-color: var(--rm-border) !important;
+}
+
+.mat-mdc-card-title,
+.mat-mdc-card-subtitle {
+  color: var(--rm-text) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Material form fields — all themes
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-form-field {
+  color: var(--rm-text);
+}
+
+.mat-mdc-form-field .mdc-text-field {
+  background: transparent !important;
+}
+
+.mat-mdc-form-field .mdc-floating-label {
+  color: var(--rm-text-muted) !important;
+}
+
+.mat-mdc-form-field .mat-mdc-input-element {
+  color: var(--rm-text) !important;
+  caret-color: var(--rm-primary) !important;
+}
+
+.mat-mdc-form-field .mat-mdc-input-element::placeholder {
+  color: var(--rm-text-muted) !important;
+  opacity: 1;
+}
+
+.mat-mdc-form-field .mdc-notched-outline__leading,
+.mat-mdc-form-field .mdc-notched-outline__notch,
+.mat-mdc-form-field .mdc-notched-outline__trailing {
+  border-color: var(--rm-border) !important;
+}
+
+.mat-mdc-form-field.mat-focused
+  .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-focused
+  .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-focused
+  .mdc-notched-outline__trailing {
+  border-color: var(--rm-primary) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Material icons
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-form-field .mat-icon {
+  color: var(--rm-text-muted) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Theme-aware Material buttons
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--rm-primary) !important;
+  color: #ffffff !important;
+}
+
+.mat-mdc-unelevated-button.mat-primary:hover,
+.mat-mdc-raised-button.mat-primary:hover {
+  background-color: var(--rm-primary-dark) !important;
+}
+
+.mat-mdc-unelevated-button.mat-primary:disabled,
+.mat-mdc-raised-button.mat-primary:disabled {
+  background-color: var(--rm-border) !important;
+  color: var(--rm-text-muted) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Primary icon buttons
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-icon-button.mat-primary {
+  color: var(--rm-primary) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Primary outlined buttons
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-outlined-button.mat-primary {
+  color: var(--rm-primary) !important;
+  border-color: var(--rm-primary) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Ripple
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-button-ripple,
+.mat-mdc-button-persistent-ripple {
+  --mat-ripple-color: color-mix(
+    in srgb,
+    var(--rm-primary) 30%,
+    transparent
+  );
+}

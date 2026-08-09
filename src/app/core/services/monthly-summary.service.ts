@@ -87,18 +87,14 @@ export class MonthlySummaryService {
    * Setting this is what unblocks that month's settlement.
    */
   async setElectricityBill(monthKey: string, amount: number): Promise<void> {
-    // Read BEFORE the write — this is "was room rent already there," not "is it there now."
-    const roomRentAlreadySet = (this.forMonth(monthKey)?.roomRent ?? 0) > 0;
-
     await this.upsert(monthKey, { electricityBill: amount, electricityBillSet: true });
 
-    // NEW — Feature 2: Settlement Ready. Only fires once room rent already
-    // existed (the condition your spec calls out), computed from local,
-    // already-loaded signals so it doesn't have to wait on the Firestore
-    // round trip to reflect back.
-    if (roomRentAlreadySet) {
-      await this.notifySettlementReady(monthKey, amount);
-    }
+    // Feature: Power Bill Added. Fires every time the bill is set for this month —
+    // previously this was gated behind "only if room rent was already set," which
+    // silently skipped the notification (and therefore the push) whenever the bill
+    // was entered before room rent for that month. Removed: the person adding the
+    // bill should always notify everyone else, regardless of ordering.
+    await this.notifyPowerBillAdded(monthKey, amount);
   }
 
   async toggleSettlementCompleted(monthKey: string, completed: boolean): Promise<void> {
@@ -106,13 +102,15 @@ export class MonthlySummaryService {
   }
 
   /**
-   * NEW — fans out one individualized "Settlement Ready" notification per
-   * member (excluding whoever just entered the electricity bill), each with
-   * their own owed/owed-back amount for the month. Reuses NotificationService
-   * exactly as the rest of the app does — notifyOnce() so re-editing the
-   * electricity bill later doesn't spam duplicate notifications per member.
+   * Fans out one individualized "Power bill added" notification per member (excluding
+   * whoever just entered the bill), each with their own owed/owed-back amount for the
+   * month so far. Reuses NotificationService exactly as the rest of the app does —
+   * notifyOnce() so re-editing the electricity bill later doesn't spam duplicate
+   * notifications per member. Type stays 'settlement_ready' — already wired end-to-end
+   * (bell + push, via the existing Render announcementListener.js) and no model/backend
+   * change is needed to reuse it here.
    */
-  private async notifySettlementReady(monthKey: string, electricityBill: number): Promise<void> {
+  private async notifyPowerBillAdded(monthKey: string, electricityBill: number): Promise<void> {
     const members = this.memberService.members();
     if (!members.length) return;
 
@@ -139,14 +137,14 @@ export class MonthlySummaryService {
       const remaining = share - paid;
       const body =
         remaining < -0.5
-          ? `Your settlement for ${monthLabel} is ready. You'll get ₹${Math.abs(remaining).toFixed(2)} back.`
-          : `Your settlement for ${monthLabel} is ready. You need to pay ₹${remaining.toFixed(2)}.`;
+          ? `Power bill added for ${monthLabel}. You'll get ₹${Math.abs(remaining).toFixed(2)} back.`
+          : `Power bill added. You have to pay ₹${remaining.toFixed(2)}.`;
 
       await this.notifications.notifyOnce(
         `settlement_ready_${monthKey}_${m.id}`,
         uid,
         'settlement_ready',
-        '📢 Settlement Ready',
+        '⚡ Power Bill Added',
         body,
         '/expenses'
       );

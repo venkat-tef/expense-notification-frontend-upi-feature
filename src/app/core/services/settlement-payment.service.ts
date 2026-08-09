@@ -126,7 +126,6 @@ export class SettlementPaymentService {
   }
 
   /** Payment approver taps "Confirm Received". */
-/** Payment approver taps "Confirm Received". */
   async confirmReceived(monthKey: string, memberId: string, memberName: string, amount: number, monthLabel: string): Promise<void> {
     const uid = this.auth.user()?.uid;
     await setDoc(
@@ -144,28 +143,31 @@ export class SettlementPaymentService {
       { merge: true }
     );
 
-    const member = this.memberService.members().find((m) => m.id === memberId);
-    if (member?.uid) {
+    // Settlement Completed — one push-eligible notification per relevant member,
+    // INCLUDING the payer (e.g. Venki must never be excluded here), skipping only
+    // whoever just tapped "Confirm Received" (the approver — same "don't notify
+    // yourself about your own action" rule the rest of the app already follows for
+    // expenses/duty reminders). This replaces the previous pair of calls that used
+    // to run here: a private notifyOnce() straight to the payer (type 'settlement',
+    // bell-only, never actually pushed) PLUS a separate notify() broadcast (type
+    // 'settlement_completed', push-eligible). Both fired for the same event, which is
+    // exactly the "inconsistent"/duplicate bell entries this was producing. Using
+    // notifyOnce() in a loop — the same reliable, deduped pattern MonthlySummaryService
+    // already uses for Settlement Ready — means a double-tap of this button can never
+    // fan out duplicate notifications the way the old notify() broadcast could, and
+    // every recipient gets exactly one, consistent, already push-eligible entry.
+    const monthSlug = monthKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    for (const m of this.memberService.members()) {
+      const recipientUid = m.uid ?? m.id;
+      if (!recipientUid || recipientUid === uid) continue;
       await this.notifications.notifyOnce(
-        `settlement_confirmed_${monthKey}_${memberId}`,
-        member.uid,
-        'settlement',
-        '✅ Payment Confirmed',
-        `Your ₹${amount.toFixed(2)} payment for ${monthLabel} has been confirmed as received.`,
+        `settlement_completed_${monthSlug}_${memberId}_${m.id}`,
+        recipientUid,
+        'settlement_completed',
+        '🎉 Settlement Completed',
+        `${memberName}'s settlement for ${monthLabel} has been completed.`,
         '/expenses'
       );
     }
-
-    // NEW — Feature 1: Settlement Completed. Broadcast to the whole house.
-    // notify() already excludes the current actor (the approver) and reaches
-    // every other member, which includes the payer — matches "Venki + all
-    // other members" without a separate targeted call.
-    await this.notifications.notify(
-      'settlement_completed',
-      '🎉 Settlement Completed',
-      `${memberName} has successfully settled the ${monthLabel} payment.`,
-      '/expenses'
-    );
   }
-
 }

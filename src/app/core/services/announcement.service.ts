@@ -12,25 +12,32 @@ import {
 } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { MemberService } from './member.service';
+import { NotificationService } from './notification.service';
 import { Announcement, AnnouncementInput } from '../models/announcement.model';
 
 const COLLECTION = 'announcements';
 
 /**
- * Editable, listable record of announcements, backed by the `announcements` collection
- * that ALREADY EXISTS in firestore.rules and functions/src/index.ts's onAnnouncementCreated
- * trigger — that Cloud Function currently never fires because nothing writes here yet.
+ * Editable, listable record of announcements, backed by the `announcements` collection.
  *
- * IMPORTANT: this deliberately does NOT also call NotificationService.notify()/
- * sendAnnouncement(). onAnnouncementCreated already sends the FCM push (and, once you
- * apply the functions/src/index.ts patch alongside this file, writes the bell entries
- * too) the moment this doc is created. Calling notify() here as well would push twice —
- * once from this write, once from Render's announcementListener.js picking up the
- * separate notifications doc. One write, one push pipeline.
+ * IMPORTANT — notification delivery: `create()` below calls
+ * NotificationService.sendAnnouncement() directly, the same call every other
+ * "announcement" push already goes through — this writes one doc per recipient
+ * straight into the `notifications` collection, which the existing Render backend's
+ * announcementListener.js already watches and already knows how to push for (type
+ * 'announcement' was already in its PUSH_ELIGIBLE_TYPES). That listener already has
+ * watchdog/reconnect recovery and a reconciliation safety net, the same infrastructure
+ * expense and settlement notifications rely on — reusing it here means delivery no
+ * longer depends on the separate Firebase Cloud Function
+ * (functions/src/onAnnouncementCreated) at all, which was a second, independent push
+ * pipeline for this one notification type. That Cloud Function has been made a no-op
+ * (see functions/src/index.ts) specifically to avoid a double push now that this method
+ * sends it directly — do not re-enable both at once.
  */
 @Injectable({ providedIn: 'root' })
 export class AnnouncementService {
   private readonly memberService = inject(MemberService);
+  private readonly notifications = inject(NotificationService);
 
   readonly announcements = signal<Announcement[]>([]);
   readonly loaded = signal(false);
@@ -67,8 +74,11 @@ export class AnnouncementService {
   }
 
   /**
-   * Creates the announcement doc. The existing onAnnouncementCreated Cloud Function
-   * (once patched to respect `status`) is what actually sends the push — not this method.
+   * Creates the announcement doc AND sends the notification (bell + push) in the same
+   * client action — no longer waiting on a separate Cloud Function trigger, which is
+   * what was causing announcements to arrive late (Cloud Functions v2 cold-start) or,
+   * if that function wasn't deployed/billing-enabled, not arrive at all. Drafts
+   * (status: 'inactive') are still saved but never notify — same behavior as before.
    */
   async create(input: AnnouncementInput): Promise<void> {
     const title = input.title.trim();
@@ -83,9 +93,13 @@ export class AnnouncementService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    if (input.status !== 'inactive') {
+      await this.notifications.sendAnnouncement(title, body);
+    }
   }
 
-  /** Edits the list entry only. Never re-triggers a push — the Cloud Function only fires on create. */
+  /** Edits the list entry only. Never re-sends a notification — same as before. */
   async update(id: string, input: AnnouncementInput): Promise<void> {
     const title = input.title.trim();
     const body = input.body.trim();

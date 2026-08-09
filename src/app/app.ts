@@ -4,6 +4,7 @@ import { BottomNav } from './shared/components/bottom-nav/bottom-nav';
 import { AuthService } from './core/services/auth.service';
 import { MemberService } from './core/services/member.service';
 import { NotificationService } from './core/services/notification.service';
+import { ThemeService } from './core/services/theme.service';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { FirebaseMessagingService } from './services/firebase-messaging';
 import { filter } from 'rxjs';
@@ -50,7 +51,8 @@ import { filter } from 'rxjs';
     .rm-splash {
       height: 100vh;
       width: 100%;
-      background: #f5f7fa;
+      background: var(--rm-bg);
+  color: var(--rm-text);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -78,7 +80,7 @@ import { filter } from 'rxjs';
     .rm-splash__title {
       font-size: 34px;
       font-weight: 800;
-      color: #111;
+      color: var(--rm-text);
       margin: 0;
       letter-spacing: -0.01em;
       position: relative;
@@ -86,7 +88,7 @@ import { filter } from 'rxjs';
     }
     .rm-splash__tagline {
       font-size: 14px;
-      color: #666;
+     color: var(--rm-text);
       margin-top: 6px;
       font-weight: 500;
       position: relative;
@@ -99,6 +101,20 @@ export class App {
   private readonly memberService = inject(MemberService);
   private readonly notifications = inject(NotificationService);
   private readonly pwaUpdate = inject(PwaUpdateService);
+
+  // NEW — Theme persistence fix: ThemeService is `providedIn: 'root'`, which means
+  // Angular never constructs it until something actually injects it. Previously,
+  // nothing did until the user opened Settings > Appearance — so on every fresh
+  // load/reload, the app sat on whatever's hardcoded in styles.scss's base :root
+  // (visually identical to the "Nestly Classic" theme) regardless of what was saved
+  // in localStorage, right up until Settings was visited that session. Injecting it
+  // here — in the root component's constructor, which runs immediately on bootstrap,
+  // before `ready()` flips true and the real UI (as opposed to the splash screen)
+  // ever paints — makes ThemeService's constructor (and the effect() inside it that
+  // reads localStorage and applies the saved theme's CSS custom properties) run right
+  // away, so the correct theme is already applied by the time the splash screen is
+  // replaced by the app itself. Not used directly below; injecting it is the point.
+  private readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
 
 readonly showBottomNav = signal(false);

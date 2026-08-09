@@ -8,8 +8,10 @@
 
   padding: 20px;
   box-sizing: border-box;
-
   overflow: hidden;
+
+  background: var(--rm-bg);
+  color: var(--rm-text);
 }
 
 .rm-login__card {
@@ -17,17 +19,40 @@
   max-width: 380px;
   padding: 32px 28px;
   border-radius: 20px;
+  box-sizing: border-box;
+
+  background: var(--rm-surface) !important;
+  color: var(--rm-text) !important;
+
+  border: 1px solid var(--rm-border);
+  box-shadow: var(--rm-shadow);
 }
 
 .rm-login__brand {
   text-align: center;
   margin-bottom: 24px;
 
-  h1 { font-size: 22px; margin: 8px 0 4px; }
-  p { color: rgba(0, 0, 0, 0.6); font-size: 13px; }
+  h1 {
+    font-size: 22px;
+    margin: 8px 0 4px;
+    color: var(--rm-text);
+  }
+
+  p {
+    color: var(--rm-text-muted);
+    font-size: 13px;
+    margin: 0;
+  }
 }
 
-.rm-login__logo { font-size: 40px; }
+.rm-login__logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 8px;
+}
 
 .rm-login__form {
   display: flex;
@@ -43,14 +68,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
+
   color: #c62828;
   font-size: 13px;
   margin: 4px 0 12px;
 
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .rm-login__submit {
+  width: 100%;
   height: 44px;
   margin-top: 12px;
 }
