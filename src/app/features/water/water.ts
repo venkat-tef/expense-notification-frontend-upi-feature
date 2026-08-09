@@ -67,13 +67,32 @@ export class Water {
   }
 
   onDaySelected(evt: { dateKey: string; label: string }): void {
-    const members = this.memberService.rotationEligibleMembers();
+    const isAdmin = this.memberService.isAdmin();
+    const allMembers = this.memberService.rotationEligibleMembers();
 
-    if (!members.length) {
+    if (!allMembers.length) {
       this.snackBar.open(
         'Add roommates in Settings first.',
         'OK',
         { duration: 3000 }
+      );
+      return;
+    }
+
+    // Role-based popup content: a normal member only ever sees — and can only
+    // mark — their own name. Admins keep seeing (and can manage) everyone,
+    // exactly as before. This only changes which members are handed to the
+    // shared picker sheet; the underlying Water record model is untouched.
+    const currentMember = this.memberService.currentMember();
+    const members = isAdmin
+      ? allMembers
+      : allMembers.filter((m) => m.id === currentMember?.id);
+
+    if (!isAdmin && !members.length) {
+      this.snackBar.open(
+        'Your member profile isn\u2019t set up for Water duty yet. Ask an admin.',
+        'OK',
+        { duration: 3500 }
       );
       return;
     }
@@ -85,6 +104,9 @@ export class Water {
       dateLabel: evt.label,
       selectedMemberId: existing?.memberId,
       accentColor: ACCENT,
+      subtitle: isAdmin
+        ? 'Tap a name to mark it done — saves instantly.'
+        : 'Tap to mark yourself done — saves instantly.',
     };
 
     const ref = this.bottomSheet.open(MemberPickerSheet, { data });

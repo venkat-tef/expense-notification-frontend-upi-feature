@@ -27,17 +27,24 @@
     }
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Paid By</mat-label>
-    <mat-select [(ngModel)]="paidByMemberId">
-      @for (m of data.members; track m.id) {
-        <mat-option [value]="m.id">{{ m.name }}</mat-option>
+  @if (isAdmin) {
+    <mat-form-field appearance="outline">
+      <mat-label>Paid By</mat-label>
+      <mat-select [(ngModel)]="paidByMemberId">
+        @for (m of data.members; track m.id) {
+          <mat-option [value]="m.id">{{ m.name }}</mat-option>
+        }
+      </mat-select>
+      @if (errors()['paidByMemberId']) {
+        <mat-error>{{ errors()['paidByMemberId'] }}</mat-error>
       }
-    </mat-select>
-    @if (errors()['paidByMemberId']) {
-      <mat-error>{{ errors()['paidByMemberId'] }}</mat-error>
-    }
-  </mat-form-field>
+    </mat-form-field>
+  } @else {
+    <mat-form-field appearance="outline">
+      <mat-label>Paid By</mat-label>
+      <input matInput [value]="selfMemberName" disabled />
+    </mat-form-field>
+  }
 
   <mat-form-field appearance="outline">
     <mat-label>Expense Date</mat-label>

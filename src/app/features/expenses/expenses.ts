@@ -140,6 +140,43 @@ export class Expenses {
     this.editingElectricity.set(false);
   }
 
+async deleteElectricityBill(): Promise<void> {
+  const current = this.summary().electricityBill;
+
+  if (!current) {
+    return;
+  }
+
+  const confirmed = confirm(
+    `Delete the electricity bill of ₹${current.toFixed(2)} for ${this.monthLabel(this.selectedMonth())}? This can't be undone.`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const monthKey = this.selectedMonth();
+
+  // 1. Clear the electricity bill itself
+  await this.summaryService.clearElectricityBill(monthKey);
+
+  // 2. IMPORTANT:
+  // Clear all old settlement/payment records for this month.
+  // This makes the next electricity bill start with a fresh settlement.
+  await this.paymentService.resetMonth(monthKey);
+
+  // 3. Reset local edit state
+  this.electricityDraft.set('');
+  this.editingElectricity.set(false);
+
+  // 4. Inform the user
+  this.snackBar.open(
+    'Electricity bill deleted and settlement reset.',
+    undefined,
+    { duration: 2200 }
+  );
+}
+
   async toggleSettlementCompleted(): Promise<void> {
     await this.summaryService.toggleSettlementCompleted(this.selectedMonth(), !this.summary().settlementCompleted);
   }
@@ -158,7 +195,24 @@ export class Expenses {
     });
   }
 
+  /**
+   * Owner/admin permission check, reused for both Edit and Delete. Backed by
+   * the same MemberService role/identity data used everywhere else in the
+   * app (isAdmin / currentMember) — no second permission system.
+   */
+  canManageExpense(expense: Expense): boolean {
+    return this.memberService.isAdmin() || this.memberService.currentMember()?.id === expense.paidByMemberId;
+  }
+
   openEditExpense(expense: Expense): void {
+    // Enforced here too, not just hidden in the template — refuses the action
+    // itself in case this is ever reached without the button being visible
+    // (e.g. a stale reference or a future template change).
+    if (!this.canManageExpense(expense)) {
+      this.snackBar.open('You can only edit your own expenses.', 'OK', { duration: 2500 });
+      return;
+    }
+
     const data: ExpenseDialogData = {
       members: this.memberService.members(),
       monthKey: expense.monthKey,
@@ -173,6 +227,11 @@ export class Expenses {
   }
 
   async deleteExpense(expense: Expense): Promise<void> {
+    if (!this.canManageExpense(expense)) {
+      this.snackBar.open('You can only delete your own expenses.', 'OK', { duration: 2500 });
+      return;
+    }
+
     const confirmed = confirm(`Delete "${expense.title}" (₹${expense.amount})? This can't be undone.`);
     if (!confirmed) return;
     await this.expenseService.deleteExpense(expense);

@@ -9,6 +9,14 @@ export interface MemberPickerData {
   dateLabel: string;
   selectedMemberId?: string;
   accentColor: string;
+  /**
+   * Optional override for the sheet's helper text under the title. Lets callers
+   * explain role-based behavior (e.g. "Tap to mark yourself done" for a member
+   * who only sees their own name vs. the default "Tap a name..." admins see
+   * with the full roommate list). Falls back to the original copy when omitted,
+   * so every existing caller keeps working unchanged.
+   */
+  subtitle?: string;
 }
 
 @Component({

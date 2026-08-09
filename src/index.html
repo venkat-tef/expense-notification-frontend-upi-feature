@@ -8,7 +8,6 @@
   <meta name="theme-color" content="#f7f8fa"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Nestly"/>
   <link rel="apple-touch-icon" href="icons/icon-192x192.png"/>
   <link rel="icon" type="image/x-icon" href="favicon.ico"/>
@@ -17,6 +16,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Material+Icons&amp;display=swap" rel="stylesheet"/>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <script>
+  /*
+   * Restore the saved Nestly theme BEFORE Angular starts.
+   *
+   * This is intentionally tiny and only restores the page background/
+   * browser/PWA theme color early enough for iOS standalone mode.
+   *
+   * ThemeService remains the single source of truth after Angular boots.
+   */
+  (() => {
+    try {
+      const themeId = localStorage.getItem('nestly-theme-id');
+
+      const backgrounds = {
+        'nestly-classic': '#f7f8fa',
+        'ocean-glass': '#f2f8fb',
+        'forest': '#f4f8f2',
+        'sunset': '#fff8f2',
+        'lavender': '#f9f6fc',
+        'midnight': '#141816'
+      };
+
+      const background =
+        backgrounds[themeId] || backgrounds['nestly-classic'];
+
+      const root = document.documentElement;
+
+      root.style.setProperty('--rm-bg', background);
+      root.style.backgroundColor = background;
+
+      /*
+       * Update the existing theme-color meta tag before Angular starts.
+       * iOS/PWA can use this during initial launch.
+       */
+      const themeColorMeta =
+        document.querySelector('meta[name="theme-color"]');
+
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', background);
+      }
+    } catch {
+      // Keep the existing default startup appearance if storage is unavailable.
+    }
+  })();
+</script>
   <style>
   html,
 body {

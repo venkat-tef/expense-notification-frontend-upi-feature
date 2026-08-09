@@ -188,6 +188,13 @@ p {
    [data-theme="..."] beats the plain :root (and the prefers-color-scheme: dark
    block) on specificity, so a chosen theme always wins over the OS light/dark
    preference.
+
+   NOTE: These [data-theme='...'] blocks are currently UNUSED — ThemeService
+   applies the active theme by writing --rm-* custom properties directly onto
+   document.documentElement.style (see theme.service.ts), and toggles
+   .rm-dark/.rm-light classes; it never sets a data-theme attribute. Left here
+   untouched (not deleted) since removing "unused" CSS wasn't asked for and
+   something else could theoretically still reference it.
    --------------------------------------------------------------------------- */
 
 :root[data-theme='emerald-gold'] {
@@ -413,6 +420,27 @@ p {
 
 .mat-mdc-snack-bar-container.rm-snack-success .mdc-snackbar__surface {
   background: var(--rm-success) !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Bottom sheets (Water/Garbage member picker, Notifications panel)
+   ---------------------------------------------------------------------------
+   Angular Material's MatBottomSheet container ships its own default surface
+   background (from the static prebuilt theme) and never reads our --rm-*
+   tokens on its own — same root cause the dialog override above already
+   solves for mat-dialog. Without this, the sheet's own panel stays white
+   (or whatever Material's default is) no matter which app theme is active,
+   even though everything *inside* the sheet (cards, text, icons) already
+   uses --rm-* variables correctly. This single rule is theme-agnostic on
+   purpose — it always points at the current --rm-surface/--rm-text, so it
+   keeps working for every existing and future theme without needing a
+   dark-mode-only gate like rm-material-dark-overrides above.
+   --------------------------------------------------------------------------- */
+
+.mat-bottom-sheet-container {
+  background: var(--rm-surface) !important;
+  color: var(--rm-text) !important;
 }
 
 

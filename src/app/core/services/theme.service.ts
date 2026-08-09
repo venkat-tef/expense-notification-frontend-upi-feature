@@ -166,38 +166,32 @@ export class ThemeService {
     }
   }
 
-  private applyToDocument(theme: ThemeDefinition): void {
-    const root = document.documentElement;
-    for (const [key, value] of Object.entries(theme.tokens)) {
-      root.style.setProperty(key, value);
-    }
-    root.style.colorScheme = theme.colorScheme;
+private applyToDocument(theme: ThemeDefinition): void {
+  const root = document.documentElement;
 
-    // Angular Material's components (dialogs, tables, tabs, selects, menus) don't
-    // read the --rm-* custom properties at all; they render from the static prebuilt
-    // azure-blue.css theme regardless of our own tokens. These classes are the hook the
-    // Material-override patch in styles.scss targets to re-color that Material chrome
-    // to match whichever theme is actually active — not just OS dark mode. Both classes
-    // are always set (mutually exclusive) so the stylesheet can tell "ThemeService ran
-    // and chose light" apart from "ThemeService hasn't run yet" (the latter still falls
-    // back to the OS prefers-color-scheme media query — see styles.scss).
-    const isDark = theme.colorScheme === 'dark';
-    root.classList.toggle('rm-dark', isDark);
-    root.classList.toggle('rm-light', !isDark);
-
-    // NEW — keeps the browser/PWA status-bar (Android Chrome's theme-color chrome, and
-    // the task-switcher card background) in sync with the active theme. This runs on
-    // EVERY theme change (via select() -> activeThemeId signal -> this effect) AND on
-    // every app start (the effect fires immediately in the constructor using whatever
-    // readStoredThemeId() restored from localStorage), so both "switch theme live" and
-    // "reopen the app later" are covered by this single code path — no separate startup
-    // logic needed. --rm-bg is used specifically because that's the color that shows
-    // through the status-bar area on both platforms: directly on Android (theme-color),
-    // and via the html/body background you already wired up on iOS, where the status bar
-    // is translucent (see index.html's apple-mobile-web-app-status-bar-style) and simply
-    // shows whatever's already painted underneath it.
-    this.applyMetaThemeColor(theme.tokens['--rm-bg']);
+  for (const [key, value] of Object.entries(theme.tokens)) {
+    root.style.setProperty(key, value);
   }
+
+  root.style.colorScheme = theme.colorScheme;
+
+  const themeColorMeta = document.querySelector(
+    'meta[name="theme-color"]'
+  );
+
+  if (themeColorMeta) {
+    const backgroundColor = theme.tokens['--rm-bg'];
+
+    if (backgroundColor) {
+      themeColorMeta.setAttribute('content', backgroundColor);
+    }
+  }
+
+  const isDark = theme.colorScheme === 'dark';
+
+  root.classList.toggle('rm-dark', isDark);
+  root.classList.toggle('rm-light', !isDark);
+}
 
   private applyMetaThemeColor(bgColor: string): void {
     let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');

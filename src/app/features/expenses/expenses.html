@@ -45,7 +45,7 @@
       }
     </div>
 
-    <div class="rm-summary-row">
+    <!-- <div class="rm-summary-row">
       <span class="rm-summary-row__label">Electricity Bill</span>
       @if (editingElectricity()) {
         <div class="rm-summary-row__edit">
@@ -65,8 +65,79 @@
           Add bill
         </button>
       }
+    </div> -->
+
+    <div class="rm-summary-row">
+  <span class="rm-summary-row__label">Electricity Bill</span>
+
+  @if (editingElectricity()) {
+    <div class="rm-summary-row__edit">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <input
+          matInput
+          type="number"
+          min="0"
+          step="0.01"
+          [(ngModel)]="electricityDraft"
+          (keydown.enter)="saveElectricity()"
+        />
+      </mat-form-field>
+
+      <button
+        mat-icon-button
+        type="button"
+        (click)="saveElectricity()"
+        aria-label="Save electricity bill"
+      >
+        <mat-icon>check</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        type="button"
+        (click)="editingElectricity.set(false)"
+        aria-label="Cancel electricity bill edit"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
+  } @else if (summary().electricityBillSet) {
+
+    <div class="rm-summary-row__bill-actions">
+      <button
+        class="rm-summary-row__value rm-summary-row__value--editable"
+        type="button"
+        (click)="startEditElectricity()"
+        aria-label="Edit electricity bill"
+      >
+        ₹{{ summary().electricityBill | number: '1.0-2' }}
+        <mat-icon>edit</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        type="button"
+        class="rm-summary-row__delete"
+        (click)="deleteElectricityBill()"
+        aria-label="Delete electricity bill"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+
+  } @else {
+
+    <button
+      class="rm-summary-row__value rm-summary-row__value--pending"
+      type="button"
+      (click)="startEditElectricity()"
+    >
+      Add bill
+    </button>
+
+  }
+</div>
     <div class="rm-summary-row">
       <span class="rm-summary-row__label">Other Expenses</span>
       <span class="rm-summary-row__value">₹{{ otherExpensesTotal() | number: '1.0-2' }}</span>
@@ -221,8 +292,10 @@
                 </button>
               }
               <span class="rm-expense-card__spacer"></span>
-              <button mat-icon-button (click)="openEditExpense(e)"><mat-icon>edit</mat-icon></button>
-              <button mat-icon-button (click)="deleteExpense(e)"><mat-icon>delete</mat-icon></button>
+              @if (canManageExpense(e)) {
+                <button mat-icon-button (click)="openEditExpense(e)"><mat-icon>edit</mat-icon></button>
+                <button mat-icon-button (click)="deleteExpense(e)"><mat-icon>delete</mat-icon></button>
+              }
             </div>
           </div>
         </div>

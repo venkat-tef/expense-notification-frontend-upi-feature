@@ -86,16 +86,21 @@ export class MonthlySummaryService {
    * Electricity bills arrive the following month but still belong to `monthKey`.
    * Setting this is what unblocks that month's settlement.
    */
-  async setElectricityBill(monthKey: string, amount: number): Promise<void> {
-    await this.upsert(monthKey, { electricityBill: amount, electricityBillSet: true });
+async setElectricityBill(monthKey: string, amount: number): Promise<void> {
+  await this.upsert(monthKey, {
+    electricityBill: amount,
+    electricityBillSet: true,
+  });
 
-    // Feature: Power Bill Added. Fires every time the bill is set for this month —
-    // previously this was gated behind "only if room rent was already set," which
-    // silently skipped the notification (and therefore the push) whenever the bill
-    // was entered before room rent for that month. Removed: the person adding the
-    // bill should always notify everyone else, regardless of ordering.
-    await this.notifyPowerBillAdded(monthKey, amount);
-  }
+  await this.notifyPowerBillAdded(monthKey, amount);
+}
+
+async clearElectricityBill(monthKey: string): Promise<void> {
+  await this.upsert(monthKey, {
+    electricityBill: 0,
+    electricityBillSet: false,
+  });
+}
 
   async toggleSettlementCompleted(monthKey: string, completed: boolean): Promise<void> {
     await this.upsert(monthKey, { settlementCompleted: completed });

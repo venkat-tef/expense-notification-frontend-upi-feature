@@ -1,5 +1,17 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { collection, doc, onSnapshot, query, serverTimestamp, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  where,
+  query as firestoreQuery,
+} from 'firebase/firestore';
+
 import { firestoreDb } from './firebase';
 import { PaymentStatus, SettlementPayment } from '../models/expense.model';
 import { NotificationService } from './notification.service';
@@ -10,11 +22,12 @@ const COLLECTION = 'settlement_payments';
 
 /**
  * Tracks the UPI payment lifecycle for members who owe money in a given month
- * (Pending -> Payment Pending Confirmation -> Settled). Members who are owed money
- * never get a doc here — that side of settlement is unchanged, computed-only, as before.
+ * (Pending -> Payment Pending Confirmation -> Settled).
  *
- * A member with no doc for (monthKey, memberId) is implicitly 'pending' — same
- * "empty = default" pattern as MonthlySummaryService.emptyFor().
+ * Members who are owed money never get a doc here — that side of settlement
+ * is unchanged, computed-only, as before.
+ *
+ * A member with no doc for (monthKey, memberId) is implicitly 'pending'.
  */
 @Injectable({ providedIn: 'root' })
 export class SettlementPaymentService {
@@ -31,11 +44,13 @@ export class SettlementPaymentService {
 
   private listen(): void {
     const q = query(collection(firestoreDb, COLLECTION));
+
     onSnapshot(
       q,
       (snap) => {
         const list: SettlementPayment[] = snap.docs.map((d) => {
           const data = d.data() as any;
+
           return {
             id: d.id,
             monthKey: data['monthKey'],
@@ -50,6 +65,7 @@ export class SettlementPaymentService {
             updatedAt: data['updatedAt']?.toMillis?.() ?? Date.now(),
           };
         });
+
         this.payments.set(list);
         this.loaded.set(true);
       },
@@ -68,9 +84,17 @@ export class SettlementPaymentService {
     return this.payments().filter((p) => p.monthKey === monthKey);
   }
 
-  /** The record for one member+month, or undefined if they're still at the implicit 'pending' default. */
-  recordFor(monthKey: string, memberId: string): SettlementPayment | undefined {
-    return this.payments().find((p) => p.monthKey === monthKey && p.memberId === memberId);
+  /**
+   * The record for one member + month,
+   * or undefined if they're still at the implicit 'pending' default.
+   */
+  recordFor(
+    monthKey: string,
+    memberId: string
+  ): SettlementPayment | undefined {
+    return this.payments().find(
+      (p) => p.monthKey === monthKey && p.memberId === memberId
+    );
   }
 
   statusFor(monthKey: string, memberId: string): PaymentStatus {
@@ -78,11 +102,68 @@ export class SettlementPaymentService {
   }
 
   /**
-   * Builds a standard UPI deep link (`upi://pay?...`). Opening it hands off to whichever
-   * UPI app the user has set as default (PhonePe, GPay, Paytm, BHIM, etc.) — no payment
-   * gateway or SDK involved, this is purely a URI scheme all UPI apps register for.
+   * IMPORTANT:
+   *
+   * Completely resets settlement payment state for a month.
+   *
+   * This is used when the electricity bill is deleted.
+   *
+   * Example:
+   *
+   * August:
+   *   Venki -> settled
+   *   Narendra -> payment_pending_confirmation
+   *
+   * Delete electricity bill
+   *
+   * Result:
+   *   August has NO settlement payment records.
+   *
+   * Add electricity bill again
+   *
+   * Result:
+   *   Everyone starts fresh as 'pending'.
    */
-  buildUpiLink(upiId: string, payeeName: string, amount: number, note: string): string {
+  async resetMonth(monthKey: string): Promise<void> {
+    const paymentsForMonth = this.forMonth(monthKey);
+
+    // If the local snapshot already has no records for this month,
+    // there is nothing to delete.
+    //
+    // We still query Firestore below so this also works safely if the
+    // local snapshot has not caught up yet.
+    const q = firestoreQuery(
+      collection(firestoreDb, COLLECTION),
+      where('monthKey', '==', monthKey)
+    );
+
+    const snap = await getDocs(q);
+
+    await Promise.all(
+      snap.docs.map((paymentDoc) =>
+        deleteDoc(doc(firestoreDb, COLLECTION, paymentDoc.id))
+      )
+    );
+
+    // No manual signal update is necessary.
+    // onSnapshot() will receive the deletions and update payments().
+    //
+    // This is intentionally a complete reset of the month's settlement
+    // payment records — not merely a status change.
+  }
+
+  /**
+   * Builds a standard UPI deep link (`upi://pay?...`).
+   *
+   * Opening it hands off to whichever UPI app the user has set as default
+   * (PhonePe, GPay, Paytm, BHIM, etc.).
+   */
+  buildUpiLink(
+    upiId: string,
+    payeeName: string,
+    amount: number,
+    note: string
+  ): string {
     const params = new URLSearchParams({
       pa: upiId,
       pn: payeeName,
@@ -90,13 +171,26 @@ export class SettlementPaymentService {
       cu: 'INR',
       tn: note,
     });
+
     return `upi://pay?${params.toString()}`;
   }
 
-  /** Member taps "I've Paid" after returning from their UPI app. */
-  async markPaid(monthKey: string, memberId: string, memberName: string, amount: number, monthLabel: string): Promise<void> {
+  /**
+   * Member taps "I've Paid" after returning from their UPI app.
+   */
+  async markPaid(
+    monthKey: string,
+    memberId: string,
+    memberName: string,
+    amount: number,
+    monthLabel: string
+  ): Promise<void> {
     await setDoc(
-      doc(firestoreDb, COLLECTION, this.docId(monthKey, memberId)),
+      doc(
+        firestoreDb,
+        COLLECTION,
+        this.docId(monthKey, memberId)
+      ),
       {
         monthKey,
         memberId,
@@ -110,26 +204,42 @@ export class SettlementPaymentService {
       { merge: true }
     );
 
-    // Targeted, once-only notification straight to the approver — reuses notifyOnce()
-    // exactly as duty reminders do, keyed so re-tapping "I've Paid" never double-notifies.
+    // Targeted, once-only notification straight to the approver.
+    // Reuses notifyOnce() exactly as before.
     const approver = this.memberService.paymentApprover();
+
     if (approver?.uid) {
       await this.notifications.notifyOnce(
         `settlement_paid_${monthKey}_${memberId}`,
         approver.uid,
         'settlement',
         '💸 Payment Pending Confirmation',
-        `${memberName} marked ₹${amount.toFixed(2)} as paid for ${monthLabel}. Please confirm once received.`,
+        `${memberName} marked ₹${amount.toFixed(
+          2
+        )} as paid for ${monthLabel}. Please confirm once received.`,
         '/expenses'
       );
     }
   }
 
-  /** Payment approver taps "Confirm Received". */
-  async confirmReceived(monthKey: string, memberId: string, memberName: string, amount: number, monthLabel: string): Promise<void> {
+  /**
+   * Payment approver taps "Confirm Received".
+   */
+  async confirmReceived(
+    monthKey: string,
+    memberId: string,
+    memberName: string,
+    amount: number,
+    monthLabel: string
+  ): Promise<void> {
     const uid = this.auth.user()?.uid;
+
     await setDoc(
-      doc(firestoreDb, COLLECTION, this.docId(monthKey, memberId)),
+      doc(
+        firestoreDb,
+        COLLECTION,
+        this.docId(monthKey, memberId)
+      ),
       {
         monthKey,
         memberId,
@@ -143,23 +253,23 @@ export class SettlementPaymentService {
       { merge: true }
     );
 
-    // Settlement Completed — one push-eligible notification per relevant member,
-    // INCLUDING the payer (e.g. Venki must never be excluded here), skipping only
-    // whoever just tapped "Confirm Received" (the approver — same "don't notify
-    // yourself about your own action" rule the rest of the app already follows for
-    // expenses/duty reminders). This replaces the previous pair of calls that used
-    // to run here: a private notifyOnce() straight to the payer (type 'settlement',
-    // bell-only, never actually pushed) PLUS a separate notify() broadcast (type
-    // 'settlement_completed', push-eligible). Both fired for the same event, which is
-    // exactly the "inconsistent"/duplicate bell entries this was producing. Using
-    // notifyOnce() in a loop — the same reliable, deduped pattern MonthlySummaryService
-    // already uses for Settlement Ready — means a double-tap of this button can never
-    // fan out duplicate notifications the way the old notify() broadcast could, and
-    // every recipient gets exactly one, consistent, already push-eligible entry.
-    const monthSlug = monthKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Settlement Completed notification.
+    //
+    // One push-eligible notification per relevant member,
+    // including the payer, while skipping the person who just
+    // performed the confirmation action.
+    const monthSlug = monthKey.replace(
+      /[^a-zA-Z0-9_-]/g,
+      '_'
+    );
+
     for (const m of this.memberService.members()) {
       const recipientUid = m.uid ?? m.id;
-      if (!recipientUid || recipientUid === uid) continue;
+
+      if (!recipientUid || recipientUid === uid) {
+        continue;
+      }
+
       await this.notifications.notifyOnce(
         `settlement_completed_${monthSlug}_${memberId}_${m.id}`,
         recipientUid,

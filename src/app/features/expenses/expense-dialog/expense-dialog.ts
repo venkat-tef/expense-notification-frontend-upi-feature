@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Member } from '../../../core/models/member.model';
 import { EXPENSE_CATEGORIES, Expense, ExpenseCategory } from '../../../core/models/expense.model';
 import { ExpenseInput, ExpenseService } from '../../../core/services/expense.service';
+import { MemberService } from '../../../core/services/member.service';
 
 export interface ExpenseDialogData {
   members: Member[];
@@ -49,16 +50,29 @@ export class ExpenseDialog {
   private readonly ref = inject(MatDialogRef<ExpenseDialog>);
   private readonly expenseService = inject(ExpenseService);
   private readonly snackBar = inject(MatSnackBar);
+  readonly memberService = inject(MemberService);
   readonly data = inject<ExpenseDialogData>(MAT_DIALOG_DATA);
 
   readonly categories = EXPENSE_CATEGORIES;
   readonly isEdit = !!this.data.expense;
   readonly today = todayDateKey();
 
+  /**
+   * Whoever is logged in sees only their own name in "Paid By" (fixed, not
+   * editable) — the full members dropdown is admin-only. Reuses
+   * MemberService.isAdmin()/currentMember(), same as everywhere else in the
+   * app; no second permission system.
+   */
+  readonly isAdmin = this.memberService.isAdmin();
+  private readonly selfMember = this.memberService.currentMember();
+
   readonly title = signal(this.data.expense?.title ?? '');
   readonly category = signal<ExpenseCategory>(this.data.expense?.category ?? 'Groceries');
   readonly amountInput = signal(this.data.expense?.amount != null ? String(this.data.expense.amount) : '');
-  readonly paidByMemberId = signal(this.data.expense?.paidByMemberId ?? this.data.members[0]?.id ?? '');
+  readonly paidByMemberId = signal(
+    this.data.expense?.paidByMemberId
+      ?? (this.isAdmin ? this.data.members[0]?.id ?? '' : this.selfMember?.id ?? this.data.members[0]?.id ?? '')
+  );
   readonly expenseDate = signal(this.data.expense?.expenseDate ?? todayDateKey());
   readonly notes = signal(this.data.expense?.notes ?? '');
 
@@ -70,6 +84,13 @@ export class ExpenseDialog {
 
   readonly saving = signal(false);
   readonly errors = signal<Record<string, string>>({});
+
+  /** Name shown in the read-only "Paid By" field for non-admins. */
+  get selfMemberName(): string {
+    return this.data.members.find((m) => m.id === this.paidByMemberId())?.name
+      ?? this.selfMember?.name
+      ?? 'You';
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
