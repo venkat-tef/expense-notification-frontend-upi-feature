@@ -43,20 +43,16 @@
 
       const root = document.documentElement;
 
-      root.style.setProperty('--rm-bg', background);
-      root.style.backgroundColor = background;
+root.style.setProperty('--rm-bg', background);
+root.style.backgroundColor = background;
 
-      /*
-       * Update the existing theme-color meta tag before Angular starts.
-       * iOS/PWA can use this during initial launch.
-       */
-      const themeColorMeta =
-        document.querySelector('meta[name="theme-color"]');
+const themeColorMeta =
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
 
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', background);
-      }
-    } catch {
+if (themeColorMeta) {
+  themeColorMeta.setAttribute('content', background);
+}
+} catch {
       // Keep the existing default startup appearance if storage is unavailable.
     }
   })();

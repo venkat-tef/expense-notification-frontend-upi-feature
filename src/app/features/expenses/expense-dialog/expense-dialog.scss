@@ -76,3 +76,49 @@
   font-size: 11px;
   color: var(--rm-text-muted);
 }
+
+
+/* =========================================
+   ADD / EDIT EXPENSE DIALOG
+   Material field label + placeholder fix
+   ========================================= */
+.rm-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 280px;
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  /* Fix Material label + placeholder overlap */
+  .mat-mdc-input-element::placeholder {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .mat-mdc-form-field:focus-within
+  .mat-mdc-input-element::placeholder {
+    opacity: 1;
+  }
+
+  /* Keep the field content vertically aligned */
+  .mat-mdc-form-field-infix {
+    min-height: 56px;
+    box-sizing: border-box;
+  }
+
+  /* ₹ prefix alignment */
+  .mat-mdc-form-field-prefix {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+  }
+
+  /* Don't vertically center textarea */
+  textarea.mat-mdc-input-element {
+    min-height: 60px;
+    line-height: 1.5;
+  }
+}

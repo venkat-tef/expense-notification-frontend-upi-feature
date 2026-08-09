@@ -20,6 +20,7 @@ import { MatMenuModule } from '@angular/material/menu';
 function currentMonthKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  // return '2027-01';
 }
 
 function formatMonthLabel(monthKey: string): string {
@@ -58,8 +59,50 @@ export class Expenses {
     () => this.summaryService.forMonth(this.selectedMonth()) ?? this.summaryService.emptyFor(this.selectedMonth())
   );
 
+  // readonly monthExpenses = computed(() => {
+  //   const expenses = this.expenseService.forMonth(this.selectedMonth());
+  //   const memberId = this.selectedMemberFilter();
+
+  //   if (!memberId) {
+  //     return expenses;
+  //   }
+
+  //   return expenses.filter(e => e.paidByMemberId === memberId);
+  // });
+
+  // readonly otherExpensesTotal = computed(() => this.monthExpenses().reduce((sum, e) => sum + e.amount, 0));
+
+  // readonly grandTotal = computed(() => {
+  //   const s = this.summary();
+  //   return s.roomRent + s.electricityBill + this.otherExpensesTotal();
+  // });
+
+  // readonly settlement = computed<MemberSettlement[]>(() => {
+  //   const members = this.memberService
+  //     .members()
+  //     .filter(m => m.role !== 'guest');
+  //   if (!members.length) return [];
+  //   const share = this.grandTotal() / members.length;
+  //   const paidMap = new Map<string, number>();
+  //   for (const e of this.monthExpenses()) {
+  //     paidMap.set(e.paidByMemberId, (paidMap.get(e.paidByMemberId) ?? 0) + e.amount);
+  //   }
+  //   return members.map((m) => {
+  //     const paid = paidMap.get(m.id) ?? 0;
+  //     return { memberId: m.id, memberName: m.name, paid, share, remaining: share - paid };
+  //   });
+  // });
+
+    // ALL expenses for the selected month.
+  // This is the source of truth for financial calculations.
+  // The member filter must NEVER affect this list.
+  readonly allMonthExpenses = computed(() => {
+    return this.expenseService.forMonth(this.selectedMonth());
+  });
+
+  // Filtered expenses — used ONLY for displaying the expense list.
   readonly monthExpenses = computed(() => {
-    const expenses = this.expenseService.forMonth(this.selectedMonth());
+    const expenses = this.allMonthExpenses();
     const memberId = this.selectedMemberFilter();
 
     if (!memberId) {
@@ -69,29 +112,56 @@ export class Expenses {
     return expenses.filter(e => e.paidByMemberId === memberId);
   });
 
-  readonly otherExpensesTotal = computed(() => this.monthExpenses().reduce((sum, e) => sum + e.amount, 0));
+  // Financial total must ALWAYS use ALL expenses.
+  readonly otherExpensesTotal = computed(() =>
+    this.allMonthExpenses().reduce((sum, e) => sum + e.amount, 0)
+  );
 
   readonly grandTotal = computed(() => {
     const s = this.summary();
-    return s.roomRent + s.electricityBill + this.otherExpensesTotal();
+
+    return (
+      s.roomRent +
+      s.electricityBill +
+      this.otherExpensesTotal()
+    );
   });
 
+  // Settlement must ALWAYS use ALL expenses.
+  // Selecting a member in the expense filter must never
+  // change anyone's share or amount owed.
   readonly settlement = computed<MemberSettlement[]>(() => {
     const members = this.memberService
       .members()
       .filter(m => m.role !== 'guest');
+
     if (!members.length) return [];
+
     const share = this.grandTotal() / members.length;
+
     const paidMap = new Map<string, number>();
-    for (const e of this.monthExpenses()) {
-      paidMap.set(e.paidByMemberId, (paidMap.get(e.paidByMemberId) ?? 0) + e.amount);
+
+    // IMPORTANT:
+    // Use allMonthExpenses(), NOT monthExpenses().
+    for (const e of this.allMonthExpenses()) {
+      paidMap.set(
+        e.paidByMemberId,
+        (paidMap.get(e.paidByMemberId) ?? 0) + e.amount
+      );
     }
+
     return members.map((m) => {
       const paid = paidMap.get(m.id) ?? 0;
-      return { memberId: m.id, memberName: m.name, paid, share, remaining: share - paid };
+
+      return {
+        memberId: m.id,
+        memberName: m.name,
+        paid,
+        share,
+        remaining: share - paid,
+      };
     });
   });
-
   // Inline editing state for Room Rent / Electricity Bill on the summary card.
   readonly editingRoomRent = signal(false);
   readonly roomRentDraft = signal('');
