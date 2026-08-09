@@ -1,0 +1,135 @@
+<div class="rm-fade-in">
+
+  @if (memberService.currentMember(); as me) {
+    @if (me.isPaymentApprover) {
+      <div class="rm-card rm-upi-card">
+        <div class="rm-upi-card__head">
+          <span class="rm-upi-card__icon"><mat-icon>account_balance_wallet</mat-icon></span>
+          <div>
+            <p class="rm-upi-card__title">My UPI ID</p>
+            <p class="rm-upi-card__hint">Roommates pay you directly via this UPI ID when settling up.</p>
+          </div>
+        </div>
+
+        @if (editingUpi()) {
+          <div class="rm-upi-card__edit">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="flex:1">
+              <input matInput placeholder="yourname@bank" [(ngModel)]="upiDraft" (keydown.enter)="saveUpi()" />
+            </mat-form-field>
+            <button mat-icon-button color="primary" [disabled]="savingUpi()" (click)="saveUpi()"><mat-icon>check</mat-icon></button>
+            <button mat-icon-button (click)="editingUpi.set(false)"><mat-icon>close</mat-icon></button>
+          </div>
+        } @else if (me.upiId) {
+          <button class="rm-upi-card__value" (click)="startEditUpi()">
+            {{ me.upiId }}
+            <mat-icon>edit</mat-icon>
+          </button>
+        } @else {
+          <button class="rm-upi-card__value rm-upi-card__value--pending" (click)="startEditUpi()">
+            Add your UPI ID
+          </button>
+        }
+
+        <span class="rm-success-chip" style="margin-top:10px">
+          <mat-icon>verified</mat-icon>You're the payment approver
+        </span>
+      </div>
+    }
+  }
+
+  <div class="rm-members-toolbar">
+    <p class="rm-section-title" style="margin:0">Members ({{ displayList.length }})</p>
+    @if (memberService.isAdmin()) {
+      <button mat-flat-button color="primary" class="rm-add-member-btn" (click)="openAddMember()">
+        <mat-icon>add</mat-icon>Add Member
+      </button>
+    }
+  </div>
+
+  @if (memberService.isAdmin()) {
+    <div
+      class="rm-member-list"
+      cdkDropList
+      [cdkDropListData]="displayList"
+      (cdkDropListDropped)="onDrop($event)"
+    >
+      @for (member of displayList; track member.id) {
+        <div class="rm-card rm-member-card" cdkDrag [cdkDragData]="member">
+          <span class="rm-member-card__handle" cdkDragHandle>
+            <mat-icon>drag_indicator</mat-icon>
+          </span>
+
+          <span class="rm-member-card__avatar">{{ initials(member.name) }}</span>
+
+          <div class="rm-member-card__info">
+            <p class="rm-member-card__name">
+              {{ member.name }}
+              @if (member.role === 'admin') { <span class="rm-role-tag">Admin</span> }
+              @if (member.isPaymentApprover) { <mat-icon class="rm-approver-icon" title="Payment approver">verified</mat-icon> }
+            </p>
+            @if (member.phone) { <p class="rm-member-card__meta">{{ member.phone }}</p> }
+          </div>
+
+          <span class="rm-status-chip" [class.rm-status-chip--inactive]="member.status === 'inactive'">
+            {{ member.status === 'inactive' ? 'Inactive' : 'Active' }}
+          </span>
+
+          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="openEditMember(member)">
+              <mat-icon>edit</mat-icon><span>Edit</span>
+            </button>
+            @if (!member.isPaymentApprover) {
+              <button mat-menu-item [disabled]="savingApproverId() === member.id" (click)="makeApprover(member)">
+                <mat-icon>verified</mat-icon><span>Make Payment Approver</span>
+              </button>
+            }
+            <button mat-menu-item class="rm-menu-danger" (click)="deleteMember(member)">
+              <mat-icon>delete</mat-icon><span>Delete</span>
+            </button>
+          </mat-menu>
+
+          <div class="rm-member-card__drag-placeholder" *cdkDragPlaceholder></div>
+        </div>
+      }
+    </div>
+
+    @if (orderDirty) {
+      <div class="rm-order-bar rm-pop">
+        <mat-icon>info</mat-icon>
+        <span>Order changed — save to apply it to Water/Garbage rotation.</span>
+        <button mat-button (click)="discardOrder()">Discard</button>
+        <button mat-flat-button color="primary" [disabled]="savingOrder()" (click)="saveOrder()">Save Order</button>
+      </div>
+    }
+  } @else {
+    <!-- Read-only view for non-admin members: no drag handles, no actions menu. -->
+    <div class="rm-member-list">
+      @for (member of displayList; track member.id) {
+        <div class="rm-card rm-member-card rm-member-card--readonly">
+          <span class="rm-member-card__avatar">{{ initials(member.name) }}</span>
+          <div class="rm-member-card__info">
+            <p class="rm-member-card__name">
+              {{ member.name }}
+              @if (member.role === 'admin') { <span class="rm-role-tag">Admin</span> }
+              @if (member.isPaymentApprover) { <mat-icon class="rm-approver-icon" title="Payment approver">verified</mat-icon> }
+            </p>
+            @if (member.phone) { <p class="rm-member-card__meta">{{ member.phone }}</p> }
+          </div>
+          <span class="rm-status-chip" [class.rm-status-chip--inactive]="member.status === 'inactive'">
+            {{ member.status === 'inactive' ? 'Inactive' : 'Active' }}
+          </span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!displayList.length) {
+    <div class="rm-empty-state">
+      <mat-icon>group_off</mat-icon>
+      <p>No members yet.</p>
+    </div>
+  }
+</div>

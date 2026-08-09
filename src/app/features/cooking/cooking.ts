@@ -21,27 +21,44 @@ export class Cooking {
   readonly cookingService = inject(CookingService);
   private readonly bottomSheet = inject(MatBottomSheet);
   private readonly snackBar = inject(MatSnackBar);
-
   readonly accent = ACCENT;
 
   get nextMember() {
-    return this.cookingService.getNextMember(this.memberService.members());
+    return this.cookingService.getNextMember(
+      this.memberService.rotationEligibleMembers()
+    );
   }
 
   /** Mark the currently-due member as skipped for today and auto-assign the next available one. */
   async skipMember(): Promise<void> {
     const skipped = this.nextMember;
     if (!skipped) return;
-    const members = this.memberService.members();
-    const assigned = await this.cookingService.skipMember(this.todayKey(), skipped.id, members);
+
+    const members = this.memberService.rotationEligibleMembers();
+
+    const assigned = await this.cookingService.skipMember(
+      this.todayKey(),
+      skipped.id,
+      members
+    );
+
     if (!assigned) {
-      this.snackBar.open('No other roommates available to reassign to.', 'OK', { duration: 3000 });
+      this.snackBar.open(
+        'No other roommates available to reassign to.',
+        'OK',
+        { duration: 3000 }
+      );
       return;
     }
-    this.snackBar.open(`⏭️ ${skipped.name} skipped — reassigned to ${assigned.name}`, undefined, {
-      duration: 2200,
-      panelClass: 'rm-snack-success',
-    });
+
+    this.snackBar.open(
+      `⏭️ ${skipped.name} skipped — reassigned to ${assigned.name}`,
+      undefined,
+      {
+        duration: 2200,
+        panelClass: 'rm-snack-success',
+      }
+    );
   }
 
   private todayKey(): string {
@@ -50,32 +67,53 @@ export class Cooking {
   }
 
   onDaySelected(evt: { dateKey: string; label: string }): void {
-    const members = this.memberService.members();
+    const members = this.memberService.rotationEligibleMembers();
+
     if (!members.length) {
-      this.snackBar.open('Add roommates in Settings first.', 'OK', { duration: 3000 });
+      this.snackBar.open(
+        'Add roommates in Settings first.',
+        'OK',
+        { duration: 3000 }
+      );
       return;
     }
+
     const existing = this.cookingService.recordForDate(evt.dateKey);
+
     const data: MemberPickerData = {
       members,
       dateLabel: evt.label,
       selectedMemberId: existing?.memberId,
       accentColor: ACCENT,
     };
+
     const ref = this.bottomSheet.open(MemberPickerSheet, { data });
+
     ref.afterDismissed().subscribe(async (memberId) => {
       if (memberId === undefined) return;
+
       if (memberId === null) {
         await this.cookingService.clearRecord(evt.dateKey);
-        this.snackBar.open('Entry cleared.', undefined, { duration: 1800 });
+        this.snackBar.open(
+          'Entry cleared.',
+          undefined,
+          { duration: 1800 }
+        );
         return;
       }
+
       await this.cookingService.setRecord(evt.dateKey, memberId);
+
       const name = members.find((m) => m.id === memberId)?.name ?? '';
-      this.snackBar.open(`🍳 Cooking saved for ${name}`, undefined, {
-        duration: 1800,
-        panelClass: 'rm-snack-success',
-      });
+
+      this.snackBar.open(
+        `🍳 Cooking saved for ${name}`,
+        undefined,
+        {
+          duration: 1800,
+          panelClass: 'rm-snack-success',
+        }
+      );
     });
   }
 }

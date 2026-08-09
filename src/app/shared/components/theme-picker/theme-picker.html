@@ -1,0 +1,21 @@
+<div class="rm-theme-grid">
+  @for (theme of themeService.themes; track theme.id) {
+    <button
+      type="button"
+      class="rm-theme-card"
+      [class.rm-theme-card--active]="themeService.activeThemeId() === theme.id"
+      (click)="select(theme.id)"
+    >
+      @if (themeService.activeThemeId() === theme.id) {
+        <span class="rm-theme-card__badge"><mat-icon>check</mat-icon></span>
+      }
+      <span class="rm-theme-card__preview" [style.background]="theme.tokens['--rm-bg']">
+        <span class="rm-theme-card__dot" [style.background]="theme.tokens['--rm-primary']"></span>
+        <span class="rm-theme-card__dot" [style.background]="theme.tokens['--rm-accent']"></span>
+        <span class="rm-theme-card__bar" [style.background]="theme.tokens['--rm-surface']" [style.border-color]="theme.tokens['--rm-border']"></span>
+      </span>
+      <span class="rm-theme-card__name">{{ theme.name }}</span>
+      <span class="rm-theme-card__tagline">{{ theme.tagline }}</span>
+    </button>
+  }
+</div>

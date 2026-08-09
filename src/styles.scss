@@ -78,6 +78,90 @@ app-root {
 h1, h2, h3, h4, h5, h6 { font-weight: 700; letter-spacing: -0.01em; margin: 0; }
 p { margin: 0; }
 
+// ---------------------------------------------------------------------------
+// App themes — selected in Settings > Appearance (ThemeService).
+// Every screen already reads color exclusively through the --rm-* custom
+// properties above, so each block below is a full re-skin of the whole app —
+// no per-component changes needed. `[data-theme="..."]` beats the plain
+// `:root` (and the `prefers-color-scheme: dark` block) on specificity, so a
+// chosen theme always wins over the OS light/dark preference.
+// ---------------------------------------------------------------------------
+
+:root[data-theme='emerald-gold'] {
+  --rm-primary: #0f6e56;
+  --rm-primary-dark: #0b5544;
+  --rm-accent: #c9a227;
+  --rm-success: #2e7d32;
+  --rm-success-bg: #e6f4ea;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #f4efe2;
+  --rm-bg: #faf7f0;
+  --rm-text: #1f2420;
+  --rm-text-muted: #6b6255;
+  --rm-border: #e7dfc9;
+  color-scheme: light;
+}
+
+:root[data-theme='midnight-navy'] {
+  --rm-primary: #132743;
+  --rm-primary-dark: #0c1b30;
+  --rm-accent: #d4af7a;
+  --rm-success: #2e7d32;
+  --rm-success-bg: #e6f4ea;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #efede7;
+  --rm-bg: #f7f5f1;
+  --rm-text: #16202e;
+  --rm-text-muted: #5b6472;
+  --rm-border: #e2dfd6;
+  color-scheme: light;
+}
+
+:root[data-theme='charcoal-copper'] {
+  --rm-primary: #b5622a;
+  --rm-primary-dark: #8b4a1e;
+  --rm-accent: #22252a;
+  --rm-success: #2e7d32;
+  --rm-success-bg: #e6f4ea;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #f0ece6;
+  --rm-bg: #f5f1ec;
+  --rm-text: #22252a;
+  --rm-text-muted: #6b6259;
+  --rm-border: #e4ded5;
+  color-scheme: light;
+}
+
+:root[data-theme='ivory-burgundy'] {
+  --rm-primary: #6e1e2e;
+  --rm-primary-dark: #531622;
+  --rm-accent: #b08d57;
+  --rm-success: #2e7d32;
+  --rm-success-bg: #e6f4ea;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #f3eae0;
+  --rm-bg: #fbf8f3;
+  --rm-text: #2a1418;
+  --rm-text-muted: #7a6560;
+  --rm-border: #e8ddd0;
+  color-scheme: light;
+}
+
+:root[data-theme='slate-sage'] {
+  --rm-primary: #5b7b6a;
+  --rm-primary-dark: #46614f;
+  --rm-accent: #c17a56;
+  --rm-success: #2e6f5e;
+  --rm-success-bg: #e6f0ec;
+  --rm-surface: #ffffff;
+  --rm-surface-alt: #e7eae7;
+  --rm-bg: #edefef;
+  --rm-text: #262b28;
+  --rm-text-muted: #6c766f;
+  --rm-border: #daddd9;
+  color-scheme: light;
+}
+
 .rm-page {
   max-width: 640px;
   margin: 0 auto;
@@ -170,3 +254,159 @@ p { margin: 0; }
 .rm-image-dialog-panel .mat-mdc-dialog-container {
   --mat-dialog-container-max-width: 100vw;
 }
+
+// PATCH — append this block to the END of src/styles.scss (after the existing
+// .rm-image-dialog-panel rules). These are shared utility classes used across the new
+// Members / Announcements / Configuration tabs and their dialogs, pulled out here so no
+// individual component has to redefine them.
+
+.rm-add-member-btn {
+  height: 38px;
+  border-radius: 10px;
+  white-space: nowrap;
+  mat-icon { margin-right: 2px; }
+}
+
+.rm-members-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.rm-status-chip {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--rm-success-bg);
+  color: var(--rm-success);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.rm-status-chip--inactive {
+  background: var(--rm-surface-alt);
+  color: var(--rm-text-muted);
+}
+
+.rm-menu-danger { color: #c62828; }
+
+.rm-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: min(420px, 82vw);
+}
+.rm-full { width: 100%; }
+
+.rm-spin { animation: rmSpin 900ms linear infinite; }
+@keyframes rmSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// --- Material dark-mode override patch -------------------------------------------------
+//
+// WHY THIS EXISTS: angular.json imports Angular Material's static, light-only prebuilt
+// theme (@angular/material/prebuilt-themes/azure-blue.css). Every <mat-*> component —
+// dialogs, tables, tabs, form fields, selects, menus — renders from THAT theme, which
+// knows nothing about the app's own --rm-* custom properties. Your own .rm-card/.rm-page
+// elements already follow dark mode correctly; Material chrome never has, which is why
+// dialogs stay white and table/tab text goes near-invisible on a dark background. This
+// patch re-colors just the Material surfaces/text using the same --rm-* tokens everything
+// else already uses, so a Material dialog or table always matches whatever theme (or OS
+// dark mode) is currently active.
+//
+// Two triggers, both included:
+//   1. @media (prefers-color-scheme: dark) — fires even before ThemeService's effect()
+//      has run (e.g. first paint, or a user who never opens Settings), matching the
+//      existing dark-mode media query already in this file.
+//   2. :root.rm-dark — the explicit class ThemeService now toggles when the ACTIVE theme
+//      (not necessarily the OS setting) is dark. Higher specificity than the media query,
+//      so an explicit theme choice always wins once ThemeService has run. See the README
+//      note about injecting ThemeService in app.ts so this applies from first paint, not
+//      only after visiting Settings.
+//
+// NOT covered: Material's own primary/accent palette (currently Azure blue, not your
+// --rm-primary teal) — that's a color-mismatch, not a visibility bug, and fixing it
+// properly means replacing the prebuilt theme with Angular Material's newer token-based
+// theming API. Flagging it, not fixing it here, since it's a separate, bigger change.
+
+@mixin rm-material-dark-overrides {
+  // Dialogs (Add/Edit Member, Add/Edit Announcement, Add/Edit Expense, etc.)
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: var(--rm-surface) !important;
+  }
+  .mat-mdc-dialog-title, .mat-mdc-dialog-content, .mat-mdc-dialog-actions {
+    color: var(--rm-text);
+  }
+  .mat-mdc-dialog-title { color: var(--rm-text) !important; }
+
+  // Form fields (inputs, textareas) — outline, label, typed text, placeholder
+  .mat-mdc-text-field-wrapper { background-color: transparent; }
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--rm-border) !important;
+  }
+  .mat-mdc-form-field .mdc-floating-label,
+  .mat-mdc-form-field-hint {
+    color: var(--rm-text-muted) !important;
+  }
+  .mat-mdc-input-element {
+    color: var(--rm-text) !important;
+    caret-color: var(--rm-primary);
+  }
+  .mat-mdc-input-element::placeholder { color: var(--rm-text-muted) !important; }
+
+  // Select — closed value + dropdown panel + options
+  .mat-mdc-select-value-text, .mat-mdc-select-arrow { color: var(--rm-text) !important; }
+  .mat-mdc-select-panel, .cdk-overlay-pane .mat-mdc-select-panel {
+    background: var(--rm-surface) !important;
+  }
+
+  // Options / menu items (select dropdowns AND the ⋮ actions menu)
+  .mat-mdc-option, .mat-mdc-menu-panel, .mat-mdc-menu-item {
+    background: var(--rm-surface) !important;
+    color: var(--rm-text) !important;
+  }
+  .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+  .mat-mdc-menu-item:hover:not([disabled]) {
+    background: var(--rm-surface-alt) !important;
+  }
+  .mat-mdc-option .mat-icon, .mat-mdc-menu-item .mat-icon { color: var(--rm-text-muted); }
+
+  // Tables (History page)
+  .mat-mdc-table { background: transparent; }
+  .mat-mdc-header-cell { color: var(--rm-text-muted) !important; }
+  .mat-mdc-cell { color: var(--rm-text) !important; }
+  .mat-mdc-header-row, .mat-mdc-row { border-bottom-color: var(--rm-border) !important; }
+
+  // Tabs (History's Water/Garbage tabs)
+  .mdc-tab__text-label { color: var(--rm-text-muted) !important; }
+  .mdc-tab--active .mdc-tab__text-label { color: var(--rm-primary) !important; }
+  .mat-mdc-tab-header { border-bottom-color: var(--rm-border); }
+
+  // Plain (non-color) buttons and icon buttons picking up default Material ink color
+  .mat-mdc-button:not([color]), .mat-mdc-icon-button:not([color]) {
+    color: var(--rm-text);
+  }
+  .mat-mdc-icon-button .mat-icon { color: inherit; }
+
+  // Snackbar default surface (success variant already handled above)
+  .mat-mdc-snack-bar-container .mdc-snackbar__surface {
+    background: var(--rm-text) !important;
+    color: var(--rm-bg) !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  // Only the pre-JS fallback: applies until ThemeService has run and set an explicit
+  // rm-dark/rm-light class. Once either class is present, these two rules below (:root.rm-dark)
+  // are the sole source of truth — an explicit light theme pick, even with the OS in dark
+  // mode, is respected instead of being overridden by this media query.
+  :root:not(.rm-dark):not(.rm-light) { @include rm-material-dark-overrides; }
+}
+:root.rm-dark { @include rm-material-dark-overrides; }
+

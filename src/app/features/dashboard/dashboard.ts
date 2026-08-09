@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, OnInit, OnDestroy, ApplicationRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { NotificationService } from '../../core/services/notification.service';
 import { NotificationSheet } from '../../shared/components/notification-sheet/notification-sheet';
-import { MatBadgeModule } from '@angular/material/badge'; 
+import { MatBadgeModule } from '@angular/material/badge';
 
 interface DashCard {
   path: string;
@@ -105,18 +106,25 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   get nextWaterMember() {
-    return this.waterService.getNextMember(this.memberService.members());
+    return this.waterService.getNextMember(
+      this.memberService.rotationEligibleMembers()
+    );
   }
 
   get nextCookingMember() {
-    return this.cookingService.getNextMember(this.memberService.members());
+    return this.cookingService.getNextMember(
+      this.memberService.rotationEligibleMembers()
+    );
   }
 
-  /** Real display name for the header greeting — matched from `members` via the signed-in user's uid,
-   * since Firebase Auth's displayName is never set for these accounts. */
+  /**
+   * Real display name for the header greeting — matched from `members` via the signed-in user's uid,
+   * since Firebase Auth's displayName is never set for these accounts.
+   */
   get currentMemberName(): string | null {
     const uid = this.auth.user()?.uid;
     if (!uid) return null;
+
     const member = this.memberService.members().find((m) => m.uid === uid);
     return member?.name ?? null;
   }
@@ -145,18 +153,35 @@ export class Dashboard implements OnInit, OnDestroy {
   async skipWater(): Promise<void> {
     const skipped = this.nextWaterMember;
     if (!skipped || this.skippingWater() || this.waterDoneToday()) return;
+
     if (!confirm(`Skip ${skipped.name} for today's water turn?`)) return;
+
     this.skippingWater.set(true);
+
     try {
-      const assigned = await this.waterService.skipMember(this.todayKey(), skipped.id, this.memberService.members());
+      const assigned = await this.waterService.skipMember(
+        this.todayKey(),
+        skipped.id,
+        this.memberService.rotationEligibleMembers()
+      );
+
       if (!assigned) {
-        this.snackBar.open('No other roommates available to reassign to.', 'OK', { duration: 3000 });
+        this.snackBar.open(
+          'No other roommates available to reassign to.',
+          'OK',
+          { duration: 3000 }
+        );
         return;
       }
-      this.snackBar.open(`⏭️ ${skipped.name} skipped — water reassigned to ${assigned.name}`, undefined, {
-        duration: 2200,
-        panelClass: 'rm-snack-success',
-      });
+
+      this.snackBar.open(
+        `⏭️ ${skipped.name} skipped — water reassigned to ${assigned.name}`,
+        undefined,
+        {
+          duration: 2200,
+          panelClass: 'rm-snack-success',
+        }
+      );
     } finally {
       this.skippingWater.set(false);
     }
@@ -165,18 +190,35 @@ export class Dashboard implements OnInit, OnDestroy {
   async skipCooking(): Promise<void> {
     const skipped = this.nextCookingMember;
     if (!skipped || this.skippingCooking() || this.cookingDoneToday()) return;
+
     if (!confirm(`Skip ${skipped.name} for today's cooking turn?`)) return;
+
     this.skippingCooking.set(true);
+
     try {
-      const assigned = await this.cookingService.skipMember(this.todayKey(), skipped.id, this.memberService.members());
+      const assigned = await this.cookingService.skipMember(
+        this.todayKey(),
+        skipped.id,
+        this.memberService.rotationEligibleMembers()
+      );
+
       if (!assigned) {
-        this.snackBar.open('No other roommates available to reassign to.', 'OK', { duration: 3000 });
+        this.snackBar.open(
+          'No other roommates available to reassign to.',
+          'OK',
+          { duration: 3000 }
+        );
         return;
       }
-      this.snackBar.open(`⏭️ ${skipped.name} skipped — cooking reassigned to ${assigned.name}`, undefined, {
-        duration: 2200,
-        panelClass: 'rm-snack-success',
-      });
+
+      this.snackBar.open(
+        `⏭️ ${skipped.name} skipped — cooking reassigned to ${assigned.name}`,
+        undefined,
+        {
+          duration: 2200,
+          panelClass: 'rm-snack-success',
+        }
+      );
     } finally {
       this.skippingCooking.set(false);
     }
@@ -198,13 +240,29 @@ export class Dashboard implements OnInit, OnDestroy {
   private checkDutyReminders(): void {
     const uid = this.auth.user()?.uid; // reuse whatever AuthService reference dashboard.ts already has
     if (!uid) return;
+
     const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
 
     if (this.nextWaterMember?.id === uid && !this.waterDoneToday()) {
-      this.notificationService.notifyOnce(`duty_water_${uid}_${today}`, uid, 'duty_water', '💧 Water Duty', 'Today is your water duty.', '/water');
+      this.notificationService.notifyOnce(
+        `duty_water_${uid}_${today}`,
+        uid,
+        'duty_water',
+        '💧 Water Duty',
+        'Today is your water duty.',
+        '/water'
+      );
     }
+
     if (this.nextCookingMember?.id === uid && !this.cookingDoneToday()) {
-      this.notificationService.notifyOnce(`duty_garbage_${uid}_${today}`, uid, 'duty_garbage', '🗑 Garbage Duty', 'Today is your garbage duty.', '/cooking');
+      this.notificationService.notifyOnce(
+        `duty_garbage_${uid}_${today}`,
+        uid,
+        'duty_garbage',
+        '🗑 Garbage Duty',
+        'Today is your garbage duty.',
+        '/cooking'
+      );
     }
   }
 }

@@ -1,0 +1,58 @@
+// .rm-members-toolbar and .rm-add-member-btn now live in the global styles.scss patch
+// (see styles.append.scss) — shared with Members tab too.
+
+.rm-announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rm-announcement-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  align-items: flex-start;
+}
+
+.rm-announcement-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rm-accent) 16%, transparent);
+  color: var(--rm-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rm-announcement-card__info { flex: 1; min-width: 0; }
+.rm-announcement-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+.rm-announcement-card__title { font-weight: 800; font-size: 14.5px; }
+.rm-announcement-card__body {
+  font-size: 13px;
+  color: var(--rm-text);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.rm-announcement-card__meta {
+  font-size: 11.5px;
+  color: var(--rm-text-muted);
+  margin-top: 6px;
+}
+
+// .rm-status-chip / .rm-status-chip--inactive / .rm-menu-danger now live in the global
+// styles.scss patch (see styles.append.scss).
+
+.rm-empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--rm-text-muted);
+  mat-icon { font-size: 36px; width: 36px; height: 36px; opacity: 0.5; }
+  p { margin-top: 8px; font-size: 13px; }
+}

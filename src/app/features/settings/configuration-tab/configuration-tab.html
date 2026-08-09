@@ -1,0 +1,27 @@
+<div class="rm-fade-in">
+  <p class="rm-section-title" style="margin-top:0">Appearance</p>
+  <div class="rm-card rm-config-card">
+    <div class="rm-config-card__head">
+      <span class="rm-config-card__icon rm-config-card__icon--active"><mat-icon>palette</mat-icon></span>
+      <div>
+        <p class="rm-config-card__title">Theme Management</p>
+        <p class="rm-config-card__desc">Choose the look and feel every member sees by default.</p>
+      </div>
+    </div>
+    <app-theme-picker />
+  </div>
+
+  <p class="rm-section-title">Coming soon</p>
+  <div class="rm-future-grid">
+    @for (cat of futureCategories; track cat.title) {
+      <div class="rm-card rm-config-card rm-config-card--future">
+        <span class="rm-config-card__icon"><mat-icon>{{ cat.icon }}</mat-icon></span>
+        <div>
+          <p class="rm-config-card__title">{{ cat.title }}</p>
+          <p class="rm-config-card__desc">{{ cat.description }}</p>
+        </div>
+        <span class="rm-future-tag">Coming soon</span>
+      </div>
+    }
+  </div>
+</div>

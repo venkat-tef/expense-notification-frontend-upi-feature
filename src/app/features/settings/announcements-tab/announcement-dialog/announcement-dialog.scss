@@ -1,0 +1,14 @@
+// .rm-dialog-content / .rm-full / .rm-spin now live in the global styles.scss patch
+// (see styles.append.scss) — shared with the Member dialog too.
+
+.rm-dialog-hint {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--rm-text-muted);
+  background: var(--rm-surface-alt);
+  padding: 8px 10px;
+  border-radius: 10px;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; margin-top: 1px; flex-shrink: 0; }
+}

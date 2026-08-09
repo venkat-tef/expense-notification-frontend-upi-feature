@@ -29,6 +29,18 @@ export class MemberService {
   readonly members = signal<Member[]>([]);
   readonly loaded = signal(false);
 
+
+
+
+/** Members eligible for Water/Garbage duty rotation. Guests are excluded. */
+readonly rotationEligibleMembers = computed<Member[]>(() =>
+  this.members().filter((m) => m.role !== 'guest')
+);
+
+
+
+
+
   /** The Firestore member profile for whoever is currently logged in (undefined until matched). */
   readonly currentMember = computed<Member | undefined>(() => {
     const uid = this.auth.user()?.uid;
@@ -133,16 +145,15 @@ export class MemberService {
         createdAt: serverTimestamp(),
       });
       await this.notifications.notify(
-  'member_joined',
-  'New Roommate',
-  `${name} joined Nestly.`,
-  '/settings'
-);
+        'member_joined',
+        'New Roommate',
+        `${name} joined Nestly.`,
+        '/settings'
+      );
     } finally {
       await deleteApp(secondaryApp);
     }
   }
-  
 
   /**
    * Updates the Firestore profile only. Email/password changes for other users require
@@ -183,6 +194,26 @@ export class MemberService {
         touched = true;
       }
     }
+    if (touched) await batch.commit();
+  }
+
+  /**
+   * NEW — persists a manually drag-and-dropped member order. `orderedIds` is the full
+   * member id list in its new top-to-bottom order; each member's `order` field is
+   * rewritten to its index in that array in a single batch, which is exactly the same
+   * field Water/Garbage rotation and every other consumer already reads — so reordering
+   * here takes effect everywhere without touching any other file.
+   */
+  async reorderMembers(orderedIds: string[]): Promise<void> {
+    const batch = writeBatch(firestoreDb);
+    let touched = false;
+    orderedIds.forEach((id, index) => {
+      const current = this.members().find((m) => m.id === id);
+      if (current && current.order !== index) {
+        batch.update(doc(firestoreDb, COLLECTION, id), { order: index });
+        touched = true;
+      }
+    });
     if (touched) await batch.commit();
   }
 

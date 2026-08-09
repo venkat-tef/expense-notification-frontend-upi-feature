@@ -1,0 +1,165 @@
+.rm-upi-card {
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.rm-upi-card__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.rm-upi-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rm-primary) 14%, transparent);
+  color: var(--rm-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rm-upi-card__title { font-weight: 800; font-size: 14px; }
+.rm-upi-card__hint { font-size: 12.5px; color: var(--rm-text-muted); margin-top: 2px; }
+.rm-upi-card__edit { display: flex; align-items: center; gap: 4px; }
+.rm-upi-card__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: var(--rm-surface-alt);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--rm-text);
+  cursor: pointer;
+  font-family: inherit;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--rm-text-muted); }
+}
+.rm-upi-card__value--pending { color: var(--rm-primary); }
+
+// .rm-members-toolbar and .rm-add-member-btn now live in the global styles.scss patch
+// (see styles.append.scss) — shared with Announcements tab too.
+
+.rm-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rm-member-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  cursor: default;
+
+  &--readonly { padding: 12px 14px; }
+}
+
+.rm-member-card__handle {
+  color: var(--rm-text-muted);
+  cursor: grab;
+  display: flex;
+  touch-action: none;
+  &:active { cursor: grabbing; }
+}
+
+.rm-member-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rm-member-card__info {
+  flex: 1;
+  min-width: 0;
+}
+.rm-member-card__name {
+  font-weight: 700;
+  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rm-member-card__meta {
+  font-size: 12px;
+  color: var(--rm-text-muted);
+  margin-top: 1px;
+}
+
+.rm-role-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rm-primary);
+  background: color-mix(in srgb, var(--rm-primary) 14%, transparent);
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.rm-approver-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: var(--rm-primary);
+  flex-shrink: 0;
+}
+
+// .rm-status-chip / .rm-status-chip--inactive / .rm-menu-danger now live in the global
+// styles.scss patch (see styles.append.scss) — shared with Announcements tab too.
+
+
+.rm-member-card__drag-placeholder {
+  background: color-mix(in srgb, var(--rm-primary) 8%, transparent);
+  border: 1.5px dashed var(--rm-primary);
+  border-radius: var(--rm-radius-lg);
+  height: 62px;
+}
+
+.cdk-drag-preview {
+  box-shadow: var(--rm-shadow-hover);
+  border-radius: var(--rm-radius-lg);
+}
+.cdk-drag-animating { transition: transform 200ms cubic-bezier(0, 0, 0.2, 1); }
+.rm-member-list.cdk-drop-list-dragging .rm-member-card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.rm-order-bar {
+  position: sticky;
+  bottom: 78px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rm-surface);
+  border: 1px solid var(--rm-border);
+  box-shadow: var(--rm-shadow-hover);
+  border-radius: var(--rm-radius-md);
+  padding: 10px 12px;
+  margin-top: 14px;
+  font-size: 13px;
+
+  mat-icon { color: var(--rm-primary); flex-shrink: 0; }
+  span { flex: 1; color: var(--rm-text-muted); }
+}
+
+.rm-empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--rm-text-muted);
+  mat-icon { font-size: 36px; width: 36px; height: 36px; opacity: 0.5; }
+  p { margin-top: 8px; font-size: 13px; }
+}

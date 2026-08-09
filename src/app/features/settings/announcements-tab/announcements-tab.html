@@ -1,0 +1,48 @@
+<div class="rm-fade-in">
+  <div class="rm-members-toolbar">
+    <p class="rm-section-title" style="margin:0">Announcements ({{ announcementService.announcements().length }})</p>
+    <button mat-flat-button color="primary" class="rm-add-member-btn" (click)="openCreate()">
+      <mat-icon>add</mat-icon>New Announcement
+    </button>
+  </div>
+
+  @if (!announcementService.loaded()) {
+    <div class="rm-empty-state"><mat-icon>hourglass_top</mat-icon><p>Loading…</p></div>
+  } @else if (!announcementService.announcements().length) {
+    <div class="rm-empty-state">
+      <mat-icon>campaign</mat-icon>
+      <p>No announcements yet. Create one to notify everyone at once.</p>
+    </div>
+  } @else {
+    <div class="rm-announcement-list">
+      @for (a of announcementService.announcements(); track a.id) {
+        <div class="rm-card rm-announcement-card">
+          <span class="rm-announcement-card__icon"><mat-icon>campaign</mat-icon></span>
+          <div class="rm-announcement-card__info">
+            <div class="rm-announcement-card__title-row">
+              <p class="rm-announcement-card__title">{{ a.title }}</p>
+              <span class="rm-status-chip" [class.rm-status-chip--inactive]="a.status === 'inactive'">
+                {{ a.status === 'inactive' ? 'Inactive' : 'Active' }}
+              </span>
+            </div>
+            <p class="rm-announcement-card__body">{{ a.body }}</p>
+            <p class="rm-announcement-card__meta">
+              {{ timeAgo(a.createdAt) }}@if (a.createdByName) { &nbsp;·&nbsp;{{ a.createdByName }} }
+            </p>
+          </div>
+          <button mat-icon-button [matMenuTriggerFor]="menu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="openEdit(a)">
+              <mat-icon>edit</mat-icon><span>Edit</span>
+            </button>
+            <button mat-menu-item class="rm-menu-danger" (click)="remove(a)">
+              <mat-icon>delete</mat-icon><span>Delete</span>
+            </button>
+          </mat-menu>
+        </div>
+      }
+    </div>
+  }
+</div>

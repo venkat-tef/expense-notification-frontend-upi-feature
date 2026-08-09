@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Announcement' : 'New Announcement' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content class="rm-dialog-content">
+    <mat-form-field appearance="outline" class="rm-full">
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="title" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="rm-full">
+      <mat-label>Message</mat-label>
+      <textarea matInput formControlName="body" rows="4"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="rm-full">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="active">Active — sends now</mat-option>
+        <mat-option value="inactive">Inactive — save as draft</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (!isEdit) {
+      <p class="rm-dialog-hint">
+        <mat-icon>info</mat-icon>
+        Active announcements push to every member immediately. Editing later never re-sends.
+      </p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      @if (saving()) { <mat-icon class="rm-spin">progress_activity</mat-icon> } @else { {{ isEdit ? 'Save' : 'Publish' }} }
+    </button>
+  </mat-dialog-actions>
+</form>

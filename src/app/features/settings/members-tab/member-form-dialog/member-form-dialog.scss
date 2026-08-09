@@ -1,0 +1,8 @@
+// .rm-dialog-content / .rm-full / .rm-spin now live in the global styles.scss patch
+// (see styles.append.scss) — shared with the Announcement dialog too.
+
+.rm-dialog-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

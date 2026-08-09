@@ -1,3 +1,4 @@
+
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -41,26 +42,53 @@ export class History {
 
   readonly displayedColumns = ['date', 'member', 'skipped', 'created'];
 
-  readonly waterMonth = signal<string>('all');
-  readonly waterSearch = signal<string>('');
-  readonly cookingMonth = signal<string>('all');
-  readonly cookingSearch = signal<string>('');
+  readonly waterMonth = signal('all');
+  readonly waterSearch = signal('');
+  readonly cookingMonth = signal('all');
+  readonly cookingSearch = signal('');
 
-  readonly waterMonthOptions = computed(() => this.monthOptions(this.waterService.records()));
-  readonly cookingMonthOptions = computed(() => this.monthOptions(this.cookingService.records()));
+  readonly waterMonthOptions = computed(() =>
+    this.monthOptions(this.waterService.records())
+  );
+
+  readonly cookingMonthOptions = computed(() =>
+    this.monthOptions(this.cookingService.records())
+  );
 
   readonly waterRows = computed(() =>
-    this.buildRows(this.waterService.records(), this.waterMonth(), this.waterSearch())
+    this.buildRows(
+      this.waterService.records(),
+      this.waterMonth(),
+      this.waterSearch()
+    )
   );
+
   readonly cookingRows = computed(() =>
-    this.buildRows(this.cookingService.records(), this.cookingMonth(), this.cookingSearch())
+    this.buildRows(
+      this.cookingService.records(),
+      this.cookingMonth(),
+      this.cookingSearch()
+    )
   );
 
-  readonly waterStats = computed(() => this.waterService.getStats(this.memberService.members()));
-  readonly cookingStats = computed(() => this.cookingService.getStats(this.memberService.members()));
+  // Only rotation-eligible members are included in duty-count summaries.
+  readonly waterStats = computed(() =>
+    this.waterService.getStats(
+      this.memberService.rotationEligibleMembers()
+    )
+  );
 
-  private monthOptions(records: TaskRecord[]): { value: string; label: string }[] {
+  readonly cookingStats = computed(() =>
+    this.cookingService.getStats(
+      this.memberService.rotationEligibleMembers()
+    )
+  );
+
+  private monthOptions(
+    records: TaskRecord[]
+  ): { value: string; label: string }[] {
     const set = new Set(records.map((r) => r.date.slice(0, 7)));
+
     return Array.from(set)
       .sort((a, b) => (a < b ? 1 : -1))
       .map((ym) => ({
@@ -72,10 +100,22 @@ export class History {
       }));
   }
 
-  private buildRows(records: TaskRecord[], month: string, search: string): HistoryRow[] {
+  private buildRows(
+    records: TaskRecord[],
+    month: string,
+    search: string
+  ): HistoryRow[] {
     // `records` is already ordered newest-first (Firestore query: orderBy('date', 'desc')).
-    const memberMap = new Map(this.memberService.members().map((m) => [m.id, m.name]));
+
+    // IMPORTANT: Keep members() here.
+    // This is a historical name lookup, so guest names from past records
+    // must continue to display correctly.
+    const memberMap = new Map(
+      this.memberService.members().map((m) => [m.id, m.name])
+    );
+
     const q = search.trim().toLowerCase();
+
     return records
       .filter((r) => month === 'all' || r.date.startsWith(month))
       .map((r) => ({
@@ -86,7 +126,9 @@ export class History {
           year: 'numeric',
         }),
         memberName: memberMap.get(r.memberId) ?? 'Unknown',
-        skippedMemberName: r.skippedMemberId ? memberMap.get(r.skippedMemberId) ?? 'Unknown' : undefined,
+        skippedMemberName: r.skippedMemberId
+          ? memberMap.get(r.skippedMemberId) ?? 'Unknown'
+          : undefined,
         createdLabel: new Date(r.createdAt).toLocaleString('en-US', {
           day: '2-digit',
           month: 'short',
@@ -97,3 +139,4 @@ export class History {
       .filter((r) => !q || r.memberName.toLowerCase().includes(q));
   }
 }
+

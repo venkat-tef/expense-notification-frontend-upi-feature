@@ -1,7 +1,8 @@
 export type NotificationType =
   | 'expense' | 'member_joined' | 'skip' | 'announcement'
   | 'duty_water' | 'duty_garbage' | 'settlement'
-  | 'settlement_completed' | 'settlement_ready'; // NEW
+  | 'settlement_completed' | 'settlement_ready'
+  | 'announcement_bell'; // NEW — bell-only, written server-side by the patched onAnnouncementCreated
 
 export interface AppNotification {
   id: string;
