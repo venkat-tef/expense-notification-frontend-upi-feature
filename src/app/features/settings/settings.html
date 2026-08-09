@@ -9,13 +9,13 @@
     </div>
   </header>
 
-  <nav class="rm-settings-tabs" role="tablist">
+  <nav class="rm-tab-bar" role="tablist">
     @for (tab of tabs(); track tab.id) {
       <button
         type="button"
         role="tab"
-        class="rm-settings-tab"
-        [class.rm-settings-tab--active]="activeTab() === tab.id"
+        class="rm-tab-btn"
+        [class.rm-tab-btn--active]="activeTab() === tab.id"
         [attr.aria-selected]="activeTab() === tab.id"
         (click)="selectTab(tab.id)"
       >
@@ -25,7 +25,7 @@
     }
   </nav>
 
-  <div class="rm-settings-panel">
+  <div class="rm-tab-panel">
     @switch (activeTab()) {
       @case ('members') { <app-members-tab /> }
       @case ('announcements') { <app-announcements-tab /> }

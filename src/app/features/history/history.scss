@@ -54,10 +54,116 @@
   gap: 10px;
 
   margin-bottom: 14px;
+}
 
-  mat-form-field {
-    width: 100%;
-    min-width: 0;
+
+/* =========================================================
+   FILTER PILLS (Month / Search) — classy, theme-aware,
+   replaces the boxy default Material outline look.
+   ========================================================= */
+
+.rm-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  height: 46px;
+  padding: 0 12px;
+
+  background: var(--rm-surface);
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-md);
+  box-shadow: var(--rm-shadow);
+
+  min-width: 0;
+
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+
+  &:focus-within {
+    border-color: var(--rm-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rm-primary) 16%, transparent);
+  }
+}
+
+.rm-filter-pill__icon {
+  flex-shrink: 0;
+
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
+
+  color: var(--rm-text-muted);
+}
+
+.rm-filter-pill__clear {
+  flex-shrink: 0;
+
+  width: 22px;
+  height: 22px;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+  background: var(--rm-surface-alt);
+  color: var(--rm-text-muted);
+  cursor: pointer;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+  &:hover { color: var(--rm-text); }
+}
+
+// Strips Angular Material's outline/notch/underline chrome and default
+// padding so the mat-form-field renders as bare, borderless content that
+// sits flush inside .rm-filter-pill above (which supplies the real
+// border/background/focus ring). Scoped to this component only — the rest
+// of the app's mat-form-fields (dialogs, login, expenses) are untouched.
+.rm-filter-pill__field {
+  flex: 1;
+  min-width: 0;
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  ::ng-deep .mdc-notched-outline {
+    display: none !important;
+  }
+
+  ::ng-deep .mat-mdc-form-field-flex {
+    padding: 0 !important;
+    align-items: center !important;
+  }
+
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding: 0 !important;
+    min-height: 0 !important;
+    border-top: none !important;
+  }
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none !important;
+  }
+
+  ::ng-deep .mat-mdc-select-value-text,
+  ::ng-deep .mat-mdc-input-element {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--rm-text);
+  }
+
+  ::ng-deep .mat-mdc-input-element::placeholder {
+    font-weight: 500;
+    color: var(--rm-text-muted) !important;
+  }
+
+  ::ng-deep .mat-mdc-select-arrow {
+    color: var(--rm-text-muted);
   }
 }
 
@@ -568,13 +674,8 @@
    ========================================================= */
 @media (max-width: 600px) {
   .rm-history-filters {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 8px;
-
-    mat-form-field {
-      width: 100%;
-      flex: none;
-    }
   }
 
   .rm-history-table-wrap {

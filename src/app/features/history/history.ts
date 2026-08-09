@@ -1,7 +1,5 @@
-
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -20,12 +18,19 @@ interface HistoryRow {
   createdLabel: string;
 }
 
+type HistoryTabId = 'water' | 'garbage';
+
+interface HistoryTabDef {
+  id: HistoryTabId;
+  label: string;
+  icon: string;
+}
+
 @Component({
   selector: 'app-history',
   standalone: true,
   imports: [
     FormsModule,
-    MatTabsModule,
     MatTableModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -41,6 +46,18 @@ export class History {
   readonly cookingService = inject(CookingService);
 
   readonly displayedColumns = ['date', 'member', 'skipped', 'created'];
+
+  /** Settings-page-style segmented tab bar (see .rm-tab-bar in styles.scss). */
+  readonly tabs: HistoryTabDef[] = [
+    { id: 'water', label: 'Water', icon: 'water_drop' },
+    { id: 'garbage', label: 'Garbage', icon: 'delete' },
+  ];
+
+  readonly activeTab = signal<HistoryTabId>('water');
+
+  selectTab(id: HistoryTabId): void {
+    this.activeTab.set(id);
+  }
 
   readonly waterMonth = signal('all');
   readonly waterSearch = signal('');
@@ -139,4 +156,3 @@ export class History {
       .filter((r) => !q || r.memberName.toLowerCase().includes(q));
   }
 }
-

@@ -468,6 +468,73 @@ p {
    Shared utility classes
    --------------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------------
+   Segmented tab bar (Settings page tabs, History page tabs, etc.)
+   --------------------------------------------------------------------------- */
+
+.rm-tab-bar {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--rm-surface-alt);
+  border-radius: var(--rm-radius-md);
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.rm-tab-btn {
+  flex: 1;
+  min-width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--rm-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+  white-space: nowrap;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(&--active) { color: var(--rm-text); }
+  &:active { transform: scale(0.97); }
+
+  // Matches the same gradient treatment used on primary CTA buttons so the
+  // active tab reads as a branded, premium element rather than a plain
+  // Material-default selection state.
+  &--active {
+    background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+    color: #ffffff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--rm-primary) 35%, transparent);
+
+    mat-icon { color: #ffffff; }
+  }
+}
+
+.rm-tab-panel {
+  animation: rmFadeIn 220ms ease both;
+}
+
+/* ---------------------------------------------------------------------------
+   Module header icon — theme-based accent (Water/Garbage/Expenses/History).
+   Dashboard's own module cards intentionally keep their fixed per-module
+   colors (blue/orange/purple/teal) so the home screen stays visually
+   scannable — this is only for the icon at the top of each module's own page.
+   --------------------------------------------------------------------------- */
+
+.rm-mod-header__icon--themed {
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+}
+
 .rm-add-member-btn {
   height: 38px;
   border-radius: 10px;

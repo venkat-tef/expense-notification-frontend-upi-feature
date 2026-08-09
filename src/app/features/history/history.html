@@ -1,6 +1,6 @@
 <div class="rm-page rm-fade-in">
   <header class="rm-mod-header">
-    <span class="rm-mod-header__icon" style="background:#6a1b9a">
+    <span class="rm-mod-header__icon rm-mod-header__icon--themed">
       <mat-icon>history</mat-icon>
     </span>
     <div>
@@ -9,119 +9,152 @@
     </div>
   </header>
 
-  <mat-tab-group animationDuration="220ms" mat-stretch-tabs="true">
-    <mat-tab label="💧 Water">
-      <div class="rm-history-tab">
-        <div class="rm-history-filters">
-          <mat-form-field appearance="outline" class="rm-history-filters__month">
-            <mat-label>Month</mat-label>
-            <mat-select [(value)]="waterMonth">
-              <mat-option value="all">All months</mat-option>
-              @for (opt of waterMonthOptions(); track opt.value) {
-                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="rm-history-filters__search">
-            <mat-label>Search member</mat-label>
-            <input matInput [(ngModel)]="waterSearch" placeholder="e.g. Venki" />
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
-        </div>
+  <nav class="rm-tab-bar" role="tablist">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        role="tab"
+        class="rm-tab-btn"
+        [class.rm-tab-btn--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="selectTab(tab.id)"
+      >
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </button>
+    }
+  </nav>
 
-        <div class="rm-card rm-history-table-wrap">
-          <table mat-table [dataSource]="waterRows()" class="rm-history-table">
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let row">{{ row.date }}</td>
-            </ng-container>
-            <ng-container matColumnDef="member">
-              <th mat-header-cell *matHeaderCellDef>Completed By</th>
-              <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
-            </ng-container>
-            <ng-container matColumnDef="skipped">
-              <th mat-header-cell *matHeaderCellDef>Skipped Member</th>
-              <td mat-cell *matCellDef="let row">{{ row.skippedMemberName ?? '—' }}</td>
-            </ng-container>
-            <ng-container matColumnDef="created">
-              <th mat-header-cell *matHeaderCellDef>Created</th>
-              <td mat-cell *matCellDef="let row">{{ row.createdLabel }}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-          </table>
-          @if (!waterRows().length) {
-            <p class="rm-history-empty">No water records yet.</p>
-          }
-        </div>
-
-        <p class="rm-section-title">Water Summary</p>
-        <div class="rm-summary-grid">
-          @for (s of waterStats(); track s.memberId) {
-            <div class="rm-card rm-summary-card">
-              <span class="rm-summary-card__name">{{ s.memberName }}</span>
-              <span class="rm-summary-card__count">{{ s.count }}</span>
+  <div class="rm-tab-panel">
+    @switch (activeTab()) {
+      @case ('water') {
+        <div class="rm-history-tab">
+          <div class="rm-history-filters">
+            <div class="rm-filter-pill rm-filter-pill--select">
+              <mat-icon class="rm-filter-pill__icon">calendar_month</mat-icon>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="rm-filter-pill__field">
+                <mat-select [(value)]="waterMonth" panelClass="rm-filter-panel" aria-label="Filter by month">
+                  <mat-option value="all">All months</mat-option>
+                  @for (opt of waterMonthOptions(); track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             </div>
-          }
-        </div>
-      </div>
-    </mat-tab>
-
-    <mat-tab label="🗑️ Garbage">
-      <div class="rm-history-tab">
-        <div class="rm-history-filters">
-          <mat-form-field appearance="outline" class="rm-history-filters__month">
-            <mat-label>Month</mat-label>
-            <mat-select [(value)]="cookingMonth">
-              <mat-option value="all">All months</mat-option>
-              @for (opt of cookingMonthOptions(); track opt.value) {
-                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            <div class="rm-filter-pill rm-filter-pill--search">
+              <mat-icon class="rm-filter-pill__icon">search</mat-icon>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="rm-filter-pill__field">
+                <input matInput [(ngModel)]="waterSearch" placeholder="Search member" aria-label="Search member" />
+              </mat-form-field>
+              @if (waterSearch()) {
+                <button type="button" class="rm-filter-pill__clear" (click)="waterSearch.set('')" aria-label="Clear search">
+                  <mat-icon>close</mat-icon>
+                </button>
               }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="rm-history-filters__search">
-            <mat-label>Search member</mat-label>
-            <input matInput [(ngModel)]="cookingSearch" placeholder="e.g. Ravi" />
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
-        </div>
-
-        <div class="rm-card rm-history-table-wrap">
-          <table mat-table [dataSource]="cookingRows()" class="rm-history-table">
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let row">{{ row.date }}</td>
-            </ng-container>
-            <ng-container matColumnDef="member">
-              <th mat-header-cell *matHeaderCellDef>Completed By</th>
-              <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
-            </ng-container>
-            <ng-container matColumnDef="skipped">
-              <th mat-header-cell *matHeaderCellDef>Skipped Member</th>
-              <td mat-cell *matCellDef="let row">{{ row.skippedMemberName ?? '—' }}</td>
-            </ng-container>
-            <ng-container matColumnDef="created">
-              <th mat-header-cell *matHeaderCellDef>Created</th>
-              <td mat-cell *matCellDef="let row">{{ row.createdLabel }}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-          </table>
-          @if (!cookingRows().length) {
-            <p class="rm-history-empty">No cooking records yet.</p>
-          }
-        </div>
-
-        <p class="rm-section-title">Garbage Summary</p>
-        <div class="rm-summary-grid">
-          @for (s of cookingStats(); track s.memberId) {
-            <div class="rm-card rm-summary-card">
-              <span class="rm-summary-card__name">{{ s.memberName }}</span>
-              <span class="rm-summary-card__count">{{ s.count }}</span>
             </div>
-          }
+          </div>
+
+          <div class="rm-card rm-history-table-wrap">
+            <table mat-table [dataSource]="waterRows()" class="rm-history-table">
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+              </ng-container>
+              <ng-container matColumnDef="member">
+                <th mat-header-cell *matHeaderCellDef>Completed By</th>
+                <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="skipped">
+                <th mat-header-cell *matHeaderCellDef>Skipped Member</th>
+                <td mat-cell *matCellDef="let row">{{ row.skippedMemberName ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="created">
+                <th mat-header-cell *matHeaderCellDef>Created</th>
+                <td mat-cell *matCellDef="let row">{{ row.createdLabel }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+            @if (!waterRows().length) {
+              <p class="rm-history-empty">No water records yet.</p>
+            }
+          </div>
+
+          <p class="rm-section-title">Water Summary</p>
+          <div class="rm-summary-grid">
+            @for (s of waterStats(); track s.memberId) {
+              <div class="rm-card rm-summary-card">
+                <span class="rm-summary-card__name">{{ s.memberName }}</span>
+                <span class="rm-summary-card__count">{{ s.count }}</span>
+              </div>
+            }
+          </div>
         </div>
-      </div>
-    </mat-tab>
-  </mat-tab-group>
+      }
+      @case ('garbage') {
+        <div class="rm-history-tab">
+          <div class="rm-history-filters">
+            <div class="rm-filter-pill rm-filter-pill--select">
+              <mat-icon class="rm-filter-pill__icon">calendar_month</mat-icon>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="rm-filter-pill__field">
+                <mat-select [(value)]="cookingMonth" panelClass="rm-filter-panel" aria-label="Filter by month">
+                  <mat-option value="all">All months</mat-option>
+                  @for (opt of cookingMonthOptions(); track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="rm-filter-pill rm-filter-pill--search">
+              <mat-icon class="rm-filter-pill__icon">search</mat-icon>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="rm-filter-pill__field">
+                <input matInput [(ngModel)]="cookingSearch" placeholder="Search member" aria-label="Search member" />
+              </mat-form-field>
+              @if (cookingSearch()) {
+                <button type="button" class="rm-filter-pill__clear" (click)="cookingSearch.set('')" aria-label="Clear search">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="rm-card rm-history-table-wrap">
+            <table mat-table [dataSource]="cookingRows()" class="rm-history-table">
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+              </ng-container>
+              <ng-container matColumnDef="member">
+                <th mat-header-cell *matHeaderCellDef>Completed By</th>
+                <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="skipped">
+                <th mat-header-cell *matHeaderCellDef>Skipped Member</th>
+                <td mat-cell *matCellDef="let row">{{ row.skippedMemberName ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="created">
+                <th mat-header-cell *matHeaderCellDef>Created</th>
+                <td mat-cell *matCellDef="let row">{{ row.createdLabel }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+            @if (!cookingRows().length) {
+              <p class="rm-history-empty">No cooking records yet.</p>
+            }
+          </div>
+
+          <p class="rm-section-title">Garbage Summary</p>
+          <div class="rm-summary-grid">
+            @for (s of cookingStats(); track s.memberId) {
+              <div class="rm-card rm-summary-card">
+                <span class="rm-summary-card__name">{{ s.memberName }}</span>
+                <span class="rm-summary-card__count">{{ s.count }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
 </div>

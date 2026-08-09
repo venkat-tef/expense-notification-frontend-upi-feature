@@ -1,4 +1,3 @@
-
 import { Component, inject, signal, OnInit, OnDestroy, ApplicationRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -45,7 +44,7 @@ export class Dashboard implements OnInit, OnDestroy {
     { path: '/water', title: 'Water', subtitle: "See today's turn", icon: 'water_drop', color: WATER_ACCENT },
     { path: '/cooking', title: 'Garbage', subtitle: "See today's turn", icon: 'delete', color: COOKING_ACCENT },
     { path: '/expenses', title: 'Expenses', subtitle: 'Track & settle spending', icon: 'payments', color: '#7b1fa2' },
-    { path: '/history', title: 'History', subtitle: 'Past records & stats', icon: 'history', color: '#6a1b9a' },
+    { path: '/history', title: 'History', subtitle: 'Past records & stats', icon: 'history', color: '#00897b' },
     // { path: '/settings', title: 'Settings', subtitle: 'Manage roommates', icon: 'settings', color: '#455a64' },
   ];
 
