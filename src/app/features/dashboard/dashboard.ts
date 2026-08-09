@@ -10,6 +10,7 @@ import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { NotificationService } from '../../core/services/notification.service';
 import { NotificationSheet } from '../../shared/components/notification-sheet/notification-sheet';
 import { MatBadgeModule } from '@angular/material/badge';
+import { ThemeService } from '../../core/services/theme.service';
 
 interface DashCard {
   path: string;
@@ -36,6 +37,7 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly memberService = inject(MemberService);
   readonly waterService = inject(WaterService);
   readonly cookingService = inject(CookingService);
+  readonly themeService = inject(ThemeService);
 
   readonly waterAccent = WATER_ACCENT;
   readonly cookingAccent = COOKING_ACCENT;
@@ -120,6 +122,13 @@ export class Dashboard implements OnInit, OnDestroy {
    * Real display name for the header greeting — matched from `members` via the signed-in user's uid,
    * since Firebase Auth's displayName is never set for these accounts.
    */
+
+logoSrc(): string {
+  return this.themeService.activeThemeId() === 'midnight'
+    ? 'assets/nestly-logo-light.png'
+    : 'assets/nestly-logo-dark.png';
+}
+  
   get currentMemberName(): string | null {
     const uid = this.auth.user()?.uid;
     if (!uid) return null;

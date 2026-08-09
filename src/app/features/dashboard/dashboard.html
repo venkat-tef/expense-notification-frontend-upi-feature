@@ -5,9 +5,17 @@
       Welcome back{{ currentMemberName ? ', ' + currentMemberName : '' }} 👋
     </p> -->
 
-    <div class="rm-brand">
+    <!-- <div class="rm-brand">
       <img src="assets/nestly.png" alt="Nestly" class="rm-brand__logo" />
-    </div>
+    </div> -->
+
+    <div class="rm-brand">
+  <img
+    [src]="logoSrc()"
+    alt="Nestly"
+    class="rm-brand__logo"
+  />
+</div>
 
    <p class="rm-dash-header__sub">
   Hi @if (currentMemberName) {<span class="rm-dash-header__name">{{ currentMemberName }}</span>}, keep water and garbage duties fair, every day.
@@ -38,7 +46,8 @@
     </button>
   </div>
 </header>
-
+  <br/>
+ 
   <div class="rm-dash-grid">
     @for (card of cards; track card.path; let i = $index) {
       <button

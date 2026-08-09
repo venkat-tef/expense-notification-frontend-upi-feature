@@ -61,11 +61,11 @@
                 <td mat-cell *matCellDef="let row">{{ row.date }}</td>
               </ng-container>
               <ng-container matColumnDef="member">
-                <th mat-header-cell *matHeaderCellDef>Completed By</th>
+                <th mat-header-cell *matHeaderCellDef>Done By</th>
                 <td mat-cell *matCellDef="let row">{{ row.memberName }}</td>
               </ng-container>
               <ng-container matColumnDef="skipped">
-                <th mat-header-cell *matHeaderCellDef>Skipped Member</th>
+                <th mat-header-cell *matHeaderCellDef>Skipped</th>
                 <td mat-cell *matCellDef="let row">{{ row.skippedMemberName ?? '—' }}</td>
               </ng-container>
               <ng-container matColumnDef="created">
