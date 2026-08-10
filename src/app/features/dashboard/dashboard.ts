@@ -125,8 +125,8 @@ export class Dashboard implements OnInit, OnDestroy {
 
 logoSrc(): string {
   return this.themeService.activeThemeId() === 'midnight'
-    ? 'assets/nestly-logo-light.png'
-    : 'assets/nestly-logo-dark.png';
+    ? 'assets/nestly-logo-dark.png'
+    : 'assets/nestly-logo-light.png';
 }
   
   get currentMemberName(): string | null {
