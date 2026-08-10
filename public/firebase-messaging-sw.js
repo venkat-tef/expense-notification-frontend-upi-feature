@@ -34,7 +34,7 @@ messaging.onBackgroundMessage((payload) => {
     badge: data.badge || '/icons/icon-72x72.png',
     // Stable tag per event: if this ever gets delivered twice, the browser REPLACES
     // the existing notification with the same tag instead of stacking a second one.
-    tag: data.expenseId || data.type || undefined,
+    tag: data.notificationId || undefined,
     data,
   });
 });

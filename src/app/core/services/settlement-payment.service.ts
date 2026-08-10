@@ -206,19 +206,25 @@ export class SettlementPaymentService {
 
     // Targeted, once-only notification straight to the approver.
     // Reuses notifyOnce() exactly as before.
+    //
+    // FIX — try/caught and NOT awaited before this method returns. A failure here
+    // (or slowness) must never block the "I've Paid" action itself, and must never
+    // propagate back to the caller.
     const approver = this.memberService.paymentApprover();
 
     if (approver?.uid) {
-      await this.notifications.notifyOnce(
-        `settlement_paid_${monthKey}_${memberId}`,
-        approver.uid,
-        'settlement',
-        '💸 Payment Pending Confirmation',
-        `${memberName} marked ₹${amount.toFixed(
-          2
-        )} as paid for ${monthLabel}. Please confirm once received.`,
-        '/expenses'
-      );
+      this.notifications
+        .notifyOnce(
+          `settlement_paid_${monthKey}_${memberId}`,
+          approver.uid,
+          'settlement',
+          '💸 Payment Pending Confirmation',
+          `${memberName} marked ₹${amount.toFixed(
+            2
+          )} as paid for ${monthLabel}. Please confirm once received.`,
+          '/expenses'
+        )
+        .catch((err) => console.error('markPaid: approver notification failed', err));
     }
   }
 
@@ -258,26 +264,44 @@ export class SettlementPaymentService {
     // One push-eligible notification per relevant member,
     // including the payer, while skipping the person who just
     // performed the confirmation action.
-    const monthSlug = monthKey.replace(
-      /[^a-zA-Z0-9_-]/g,
-      '_'
+    //
+    // FIX — deliberately NOT awaited before this method returns (the write above,
+    // the part the UI actually depends on, already completed). Each member's
+    // notifyOnce() is individually try/caught so one member's failure can no longer
+    // silently abort notifications to everyone after them in the loop.
+    this.notifySettlementCompleted(monthKey, memberId, memberName, monthLabel, uid).catch(
+      (err) => console.error('confirmReceived: settlement_completed fan-out failed', err)
     );
+  }
+
+  private async notifySettlementCompleted(
+    monthKey: string,
+    memberId: string,
+    memberName: string,
+    monthLabel: string,
+    actingUid: string | undefined
+  ): Promise<void> {
+    const monthSlug = monthKey.replace(/[^a-zA-Z0-9_-]/g, '_');
 
     for (const m of this.memberService.members()) {
       const recipientUid = m.uid ?? m.id;
 
-      if (!recipientUid || recipientUid === uid) {
+      if (!recipientUid || recipientUid === actingUid) {
         continue;
       }
 
-      await this.notifications.notifyOnce(
-        `settlement_completed_${monthSlug}_${memberId}_${m.id}`,
-        recipientUid,
-        'settlement_completed',
-        '🎉 Settlement Completed',
-        `${memberName}'s settlement for ${monthLabel} has been completed.`,
-        '/expenses'
-      );
+      try {
+        await this.notifications.notifyOnce(
+          `settlement_completed_${monthSlug}_${memberId}_${m.id}`,
+          recipientUid,
+          'settlement_completed',
+          '🎉 Settlement Completed',
+          `${memberName}'s settlement for ${monthLabel} has been completed.`,
+          '/expenses'
+        );
+      } catch (err) {
+        console.error(`confirmReceived: notification failed for member ${m.id}`, err);
+      }
     }
   }
 }
