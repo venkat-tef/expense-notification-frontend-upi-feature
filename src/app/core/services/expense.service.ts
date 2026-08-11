@@ -194,7 +194,9 @@ export class ExpenseService {
   async deleteExpense(expense: Expense): Promise<void> {
     // Write a transient event BEFORE deleting the expense.
     // This allows the backend deletion listener to know
-    // exactly what was deleted.
+    // exactly what was deleted. (Push-only — this doc is
+    // deleted by the backend right after it's processed,
+    // so it is NOT the bell/history record. See below.)
 
     const deletionNotificationId =
       `expense_deleted_${expense.id}_${Date.now()}`;
@@ -220,6 +222,39 @@ export class ExpenseService {
 
         deletedAt: serverTimestamp(),
       }
+    );
+
+    // ROOT-CAUSE FIX — this method used to ONLY write the transient
+    // expenseEvents doc above, which the backend deletes right after
+    // sending its push. That meant a DELETE never left any trace in the
+    // `notifications` collection (the bell/history), unlike an ADD, which
+    // gets its own permanent addDoc() record via notify() below. So history
+    // only ever showed ADDs — a delete looked like it vanished, and an
+    // ADD -> DELETE -> ADD cycle only ever showed both ADDs with no DELETE
+    // between them.
+    //
+    // This addDoc()s a brand-new, permanent bell/history record for the
+    // deletion, exactly parallel to addExpense()'s notify() call. Reuses
+    // type 'expense' (not 'expense_deleted') on purpose: it's not part of
+    // the NotificationType union or the icon map, and — just as important —
+    // it's NOT in the backend's PUSH_ELIGIBLE_TYPES list, so this stays
+    // bell-only and does not fire a second, duplicate OS push alongside the
+    // one the expenseEvents doc above already triggers via deletionListener.js.
+    const deleterUid =
+      this.auth.user()?.uid ??
+      expense.paidByMemberId;
+
+    const deleterName =
+      this.memberService.members().find(
+        (m) => (m.uid ?? m.id) === deleterUid
+      )?.name ?? 'Someone';
+
+    await this.notifications.notify(
+      'expense',
+      '🗑️ Expense Removed',
+      `${deleterName} removed "${expense.title}" (₹${expense.amount}).`,
+      '/expenses',
+      deletionNotificationId
     );
 
     await deleteDoc(

@@ -287,6 +287,56 @@ export class NotificationService {
   }
 
   // ============================================================
+  // NOTIFY A SINGLE MEMBER (event-based — ALWAYS creates a new doc)
+  // ============================================================
+  //
+  // Same addDoc() shape as notify(), but addressed to exactly one target
+  // member instead of "everyone except the current user". Use this for any
+  // flow that needs to notify one specific person (e.g. the settlement
+  // approver, or one member's individualized power-bill share) while still
+  // recording every occurrence as its own permanent history entry.
+  //
+  // IMPORTANT: unlike notifyOnce(), this NEVER checks for an existing doc —
+  // every call is a brand-new event. Do not pass a fixed/deterministic
+  // notificationId here expecting de-duplication; that's what notifyOnce()
+  // is for, and only for genuinely idempotent, once-per-key notifications
+  // (e.g. "today's duty reminder", keyed by date).
+  async notifyMember(
+    type: NotificationType,
+    title: string,
+    body: string,
+    url: string,
+    targetUid: string,
+    notificationId?: string
+  ): Promise<void> {
+    if (!targetUid) {
+      return;
+    }
+
+    const eventNotificationId =
+      notificationId ??
+      `${type}_${Date.now()}_${crypto.randomUUID()}`;
+
+    await addDoc(
+      collection(firestoreDb, COLLECTION),
+      {
+        type,
+        title,
+        body,
+        url,
+
+        targetMemberId: targetUid,
+
+        notificationId: eventNotificationId,
+
+        createdAt: serverTimestamp(),
+
+        readBy: [],
+      }
+    );
+  }
+
+  // ============================================================
   // NOTIFY ONCE
   // ============================================================
 

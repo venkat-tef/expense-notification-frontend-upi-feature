@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { MonthlySummary } from '../models/expense.model';
 import { MemberService } from './member.service';        // NEW
@@ -108,23 +108,36 @@ export class MonthlySummaryService {
       electricityBillSet: false,
     });
 
-    // FIX — notifyOnce() dedupes on a fixed ID (`settlement_ready_${monthKey}_${memberId}`)
-    // that only ever depends on the month and member, never on which specific bill or
-    // amount triggered it. Deleting the bill reset the settlement payment records, but
-    // left these "already notified" marker docs behind — so re-adding a bill for the
-    // SAME month kept silently finding them and skipping every notification, forever,
-    // for that month. Deleting the markers here means the next setElectricityBill() call
-    // for this month starts clean and actually notifies again with the new amount.
-    // deleteDoc() on a doc that doesn't exist is a no-op, not an error — safe to call
-    // unconditionally for every current member, no existence check needed.
+    // ROOT-CAUSE FIX — this used to delete the notifyOnce() "already notified" marker
+    // doc (`settlement_ready_${monthKey}_${memberId}`) so a later re-add could notify
+    // again. That marker WAS the "Power bill added" notification's only Firestore
+    // record, so deleting it silently erased that notification from history — with
+    // no "Power bill deleted" notification ever created to replace it. Net effect:
+    // ADD -> DELETE -> ADD left only the newest ADD visible, exactly the bug reported.
+    //
+    // Now every lifecycle event (added / deleted / added again) is its own permanent,
+    // addDoc()-backed record via notifyMember() — nothing here deletes history, and
+    // this explicitly records the deletion as its own event.
+    const enteredByMemberId = this.memberService.currentMember()?.id;
+    const monthLabel = formatMonthLabel(monthKey);
+
     const results = await Promise.allSettled(
       this.memberService
         .members()
-        .map((m) => deleteDoc(doc(firestoreDb, 'notifications', `settlement_ready_${monthKey}_${m.id}`)))
+        .filter((m) => m.id !== enteredByMemberId) // never notify the person who cleared the bill
+        .map((m) =>
+          this.notifications.notifyMember(
+            'settlement_ready',
+            '⚡ Power Bill Removed',
+            `Power bill for ${monthLabel} was removed.`,
+            '/expenses',
+            m.uid ?? m.id
+          )
+        )
     );
     results.forEach((r) => {
       if (r.status === 'rejected') {
-        console.error('clearElectricityBill: failed to clear a notification marker', r.reason);
+        console.error('clearElectricityBill: failed to send a removal notification for a member', r.reason);
       }
     });
   }
@@ -136,20 +149,26 @@ export class MonthlySummaryService {
   /**
    * Fans out one individualized "Power bill added" notification per member (excluding
    * whoever just entered the bill), each with their own owed/owed-back amount for the
-   * month so far. Reuses NotificationService exactly as the rest of the app does —
-   * notifyOnce() so re-editing the electricity bill later doesn't spam duplicate
-   * notifications per member. Type stays 'settlement_ready' — already wired end-to-end
-   * (bell + push, via the existing Render announcementListener.js) and no model/backend
-   * change is needed to reuse it here.
+   * month so far. Type stays 'settlement_ready' — already wired end-to-end (bell + push,
+   * via the existing Render announcementListener.js) and no model/backend change is
+   * needed to reuse it here.
    *
-   * FIX — each member's notifyOnce() is now individually try/caught. Previously, a
-   * failure for ANY one member (a network blip, a bad uid, anything) aborted the
-   * `for` loop entirely — every member after that point in iteration order silently
-   * never got notified, with no error surfaced anywhere the user could see. Now one
-   * member's failure is logged and skipped; everyone else still gets notified.
+   * ROOT-CAUSE FIX — this used to call notifyOnce() with a fixed ID
+   * (`settlement_ready_${monthKey}_${memberId}`) that depended only on the month and
+   * member, never on the specific event. notifyOnce() skips writing entirely if a doc
+   * with that ID already exists, so a genuinely new "bill added again" event for the
+   * same month silently produced NOTHING once the first notification for that month
+   * existed — and, combined with clearElectricityBill() deleting that same marker doc,
+   * meant only the single latest ADD was ever visible. Now uses notifyMember(), which
+   * always addDoc()s a brand-new history record — every add is its own permanent event.
+   *
+   * Each member's notifyMember() is individually try/caught. A failure for any ONE
+   * member (a network blip, a bad uid, anything) no longer aborts the loop — everyone
+   * else still gets notified.
    */
   private async notifyPowerBillAdded(monthKey: string, electricityBill: number): Promise<void> {
-    const members = this.memberService.members();
+    // const members = this.memberService.members();
+      const members = this.memberService.members().filter((m) => m.role !== 'guest');
     if (!members.length) return;
 
     const roomRent = this.forMonth(monthKey)?.roomRent ?? 0;
@@ -185,13 +204,12 @@ export class MonthlySummaryService {
               ? `Power bill added for ${monthLabel}. You'll get ₹${Math.abs(remaining).toFixed(2)} back.`
               : `Power bill added. You have to pay ₹${remaining.toFixed(2)}.`;
 
-          return this.notifications.notifyOnce(
-            `settlement_ready_${monthKey}_${m.id}`,
-            uid,
+          return this.notifications.notifyMember(
             'settlement_ready',
             '⚡ Power Bill Added',
             body,
-            '/expenses'
+            '/expenses',
+            uid
           );
         })
     );

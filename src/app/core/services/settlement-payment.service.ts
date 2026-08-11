@@ -204,25 +204,32 @@ export class SettlementPaymentService {
       { merge: true }
     );
 
-    // Targeted, once-only notification straight to the approver.
-    // Reuses notifyOnce() exactly as before.
+    // Targeted notification straight to the approver.
     //
-    // FIX — try/caught and NOT awaited before this method returns. A failure here
+    // ROOT-CAUSE FIX — this used to call notifyOnce() with a fixed ID
+    // (`settlement_paid_${monthKey}_${memberId}`) that depended only on the month and
+    // member, never on the specific event. notifyOnce() writes nothing if a doc with
+    // that ID already exists, so once ANY "marked paid" notification had ever been sent
+    // for this member+month, every later one (e.g. after resetMonth() due to a bill
+    // correction, or a second payment cycle) was silently dropped forever — no error,
+    // no history entry, nothing. Now uses notifyMember(), which always addDoc()s a
+    // brand-new history record, so every "marked paid" action produces its own event.
+    //
+    // Still try/caught and NOT awaited before this method returns. A failure here
     // (or slowness) must never block the "I've Paid" action itself, and must never
     // propagate back to the caller.
     const approver = this.memberService.paymentApprover();
 
     if (approver?.uid) {
       this.notifications
-        .notifyOnce(
-          `settlement_paid_${monthKey}_${memberId}`,
-          approver.uid,
+        .notifyMember(
           'settlement',
           '💸 Payment Pending Confirmation',
           `${memberName} marked ₹${amount.toFixed(
             2
           )} as paid for ${monthLabel}. Please confirm once received.`,
-          '/expenses'
+          '/expenses',
+          approver.uid
         )
         .catch((err) => console.error('markPaid: approver notification failed', err));
     }
@@ -265,9 +272,9 @@ export class SettlementPaymentService {
     // including the payer, while skipping the person who just
     // performed the confirmation action.
     //
-    // FIX — deliberately NOT awaited before this method returns (the write above,
+    // Deliberately NOT awaited before this method returns (the write above,
     // the part the UI actually depends on, already completed). Each member's
-    // notifyOnce() is individually try/caught so one member's failure can no longer
+    // notifyMember() is individually try/caught so one member's failure can no longer
     // silently abort notifications to everyone after them in the loop.
     this.notifySettlementCompleted(monthKey, memberId, memberName, monthLabel, uid).catch(
       (err) => console.error('confirmReceived: settlement_completed fan-out failed', err)
@@ -281,8 +288,14 @@ export class SettlementPaymentService {
     monthLabel: string,
     actingUid: string | undefined
   ): Promise<void> {
-    const monthSlug = monthKey.replace(/[^a-zA-Z0-9_-]/g, '_');
-
+    // ROOT-CAUSE FIX — this used to call notifyOnce() with a fixed ID
+    // (`settlement_completed_${monthSlug}_${memberId}_${m.id}`) that depended only on
+    // the month and the two members involved, never on the specific event. Any repeat
+    // "settlement completed" cycle for the same month+pair (e.g. after resetMonth()
+    // due to a bill correction, then paid + confirmed again) silently produced nothing,
+    // because notifyOnce() found the old marker doc and skipped writing entirely — no
+    // history entry, no push. Now uses notifyMember(), which always addDoc()s a
+    // brand-new record, so every confirmation is its own permanent, separate event.
     for (const m of this.memberService.members()) {
       const recipientUid = m.uid ?? m.id;
 
@@ -291,13 +304,12 @@ export class SettlementPaymentService {
       }
 
       try {
-        await this.notifications.notifyOnce(
-          `settlement_completed_${monthSlug}_${memberId}_${m.id}`,
-          recipientUid,
+        await this.notifications.notifyMember(
           'settlement_completed',
           '🎉 Settlement Completed',
           `${memberName}'s settlement for ${monthLabel} has been completed.`,
-          '/expenses'
+          '/expenses',
+          recipientUid
         );
       } catch (err) {
         console.error(`confirmReceived: notification failed for member ${m.id}`, err);
