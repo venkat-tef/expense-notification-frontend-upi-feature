@@ -6,11 +6,13 @@ export interface TaskRecord {
   memberId: string;
   createdAt: number;
   /**
-   * Set when the member originally due for this date was unavailable and got skipped.
-   * `memberId` above is whoever was auto-assigned instead. Only affects this date's
-   * record — the skipped member remains in the normal rotation for future turns.
+   * Members who were originally due for this date but were unavailable and got skipped,
+   * in the order they were skipped. `memberId` above is whoever was finally auto-assigned
+   * after skipping through all of them — supports skipping 2, 3, or more roommates in a
+   * row on the same day, not just one. Only affects this date's record — skipped members
+   * remain in the normal rotation for future turns.
    */
-  skippedMemberId?: string;
+  skippedMemberIds?: string[];
 }
 
 export interface MemberStat {

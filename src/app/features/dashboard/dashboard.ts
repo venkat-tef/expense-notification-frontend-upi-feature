@@ -118,6 +118,72 @@ export class Dashboard implements OnInit, OnDestroy {
     );
   }
 
+  private get todaysWaterRecord() {
+    return this.waterService.recordForDate(this.todayKey());
+  }
+
+  private get todaysCookingRecord() {
+    return this.cookingService.recordForDate(this.todayKey());
+  }
+
+  /**
+   * Whoever is actually up for water today. Normally this is just `nextWaterMember`, but
+   * once one or more people have already been skipped today it's whoever got reassigned
+   * instead — so the dashboard (and the Skip button) always target the right person when
+   * chaining multiple skips (2, 3, or more roommates unavailable in a row).
+   */
+  // get waterTurnMember() {
+  //   const record = this.todaysWaterRecord;
+  //   if (!record) return this.nextWaterMember;
+  //   return this.memberService.members().find((m) => m.id === record.memberId) ?? this.nextWaterMember;
+  // }
+  get waterTurnMember() {
+  const record = this.todaysWaterRecord;
+
+  // No record yet → normal next turn
+  if (!record) return this.nextWaterMember;
+
+  // If today's duty was reassigned because of skips,
+  // show the currently assigned member until the duty is completed.
+  if (record.skippedMemberIds?.length && !this.waterDoneToday()) {
+    return this.memberService.members().find(
+      (m) => m.id === record.memberId
+    ) ?? this.nextWaterMember;
+  }
+
+  // Today's duty is completed → show the NEXT person.
+  return this.nextWaterMember;
+}
+
+  // get cookingTurnMember() {
+  //   const record = this.todaysCookingRecord;
+  //   if (!record) return this.nextCookingMember;
+  //   return this.memberService.members().find((m) => m.id === record.memberId) ?? this.nextCookingMember;
+  // }
+  get cookingTurnMember() {
+  const record = this.todaysCookingRecord;
+
+  if (!record) return this.nextCookingMember;
+
+  if (record.skippedMemberIds?.length && !this.cookingDoneToday()) {
+    return this.memberService.members().find(
+      (m) => m.id === record.memberId
+    ) ?? this.nextCookingMember;
+  }
+
+  return this.nextCookingMember;
+}
+
+  /** True while today's water assignment is a pending reassignment from an earlier skip
+   *  (not yet a confirmed manual pick) — used to show a "(reassigned)" hint in the UI. */
+  waterWasReassignedToday(): boolean {
+    return !!this.todaysWaterRecord?.skippedMemberIds?.length;
+  }
+
+  cookingWasReassignedToday(): boolean {
+    return !!this.todaysCookingRecord?.skippedMemberIds?.length;
+  }
+
   /**
    * Real display name for the header greeting — matched from `members` via the signed-in user's uid,
    * since Firebase Auth's displayName is never set for these accounts.
@@ -151,15 +217,20 @@ logoSrc(): string {
   }
 
   waterDoneToday(): boolean {
-    return !!this.waterService.recordForDate(this.todayKey());
+    const record = this.waterService.recordForDate(this.todayKey());
+    return !!record && !record.skippedMemberIds?.length;
   }
 
   cookingDoneToday(): boolean {
-    return !!this.cookingService.recordForDate(this.todayKey());
+    const record = this.cookingService.recordForDate(this.todayKey());
+    return !!record && !record.skippedMemberIds?.length;
   }
 
   async skipWater(): Promise<void> {
-    const skipped = this.nextWaterMember;
+    const record = this.waterService.recordForDate(this.todayKey());
+    const skipped = record
+      ? this.memberService.members().find((m) => m.id === record.memberId) ?? this.nextWaterMember
+      : this.nextWaterMember;
     if (!skipped || this.skippingWater() || this.waterDoneToday()) return;
 
     if (!confirm(`Skip ${skipped.name} for today's water turn?`)) return;
@@ -170,7 +241,8 @@ logoSrc(): string {
       const assigned = await this.waterService.skipMember(
         this.todayKey(),
         skipped.id,
-        this.memberService.rotationEligibleMembers()
+        this.memberService.rotationEligibleMembers(),
+        record?.skippedMemberIds ?? []
       );
 
       if (!assigned) {
@@ -196,7 +268,10 @@ logoSrc(): string {
   }
 
   async skipCooking(): Promise<void> {
-    const skipped = this.nextCookingMember;
+    const record = this.cookingService.recordForDate(this.todayKey());
+    const skipped = record
+      ? this.memberService.members().find((m) => m.id === record.memberId) ?? this.nextCookingMember
+      : this.nextCookingMember;
     if (!skipped || this.skippingCooking() || this.cookingDoneToday()) return;
 
     if (!confirm(`Skip ${skipped.name} for today's cooking turn?`)) return;
@@ -207,7 +282,8 @@ logoSrc(): string {
       const assigned = await this.cookingService.skipMember(
         this.todayKey(),
         skipped.id,
-        this.memberService.rotationEligibleMembers()
+        this.memberService.rotationEligibleMembers(),
+        record?.skippedMemberIds ?? []
       );
 
       if (!assigned) {

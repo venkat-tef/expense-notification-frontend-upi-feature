@@ -143,8 +143,8 @@ export class History {
           year: 'numeric',
         }),
         memberName: memberMap.get(r.memberId) ?? 'Unknown',
-        skippedMemberName: r.skippedMemberId
-          ? memberMap.get(r.skippedMemberId) ?? 'Unknown'
+        skippedMemberName: r.skippedMemberIds?.length
+          ? r.skippedMemberIds.map((id) => memberMap.get(id) ?? 'Unknown').join(', ')
           : undefined,
         createdLabel: new Date(r.createdAt).toLocaleString('en-US', {
           day: '2-digit',

@@ -42,7 +42,9 @@ export abstract class RecordServiceBase {
             date: data['date'],
             memberId: data['memberId'],
             createdAt: data['createdAt']?.toMillis?.() ?? Date.now(),
-            skippedMemberId: data['skippedMemberId'] ?? undefined,
+            skippedMemberIds:
+              data['skippedMemberIds'] ??
+              (data['skippedMemberId'] ? [data['skippedMemberId']] : undefined),
           };
         });
         this.records.set(list);
@@ -57,52 +59,76 @@ export abstract class RecordServiceBase {
 
   /**
    * Auto-saves the selected member for a given date (YYYY-MM-DD). Upsert, no submit needed.
-   * Pass `skippedMemberId` when this assignment is a reassignment after skipping whoever
-   * was originally due — omit it for a normal (non-skip) assignment, which clears any
-   * previous skip flag on that date.
+   * Pass `skippedMemberIds` when this assignment is a reassignment after skipping one or
+   * more members who were originally due — omit it (or pass an empty array) for a normal
+   * (non-skip) assignment, which clears any previous skip flags on that date.
    */
-  async setRecord(dateKey: string, memberId: string, skippedMemberId?: string): Promise<void> {
+  async setRecord(dateKey: string, memberId: string, skippedMemberIds?: string[]): Promise<void> {
     const data: Record<string, unknown> = {
       date: dateKey,
       memberId,
       createdAt: serverTimestamp(),
     };
-    if (skippedMemberId) {
-      data['skippedMemberId'] = skippedMemberId;
+    if (skippedMemberIds && skippedMemberIds.length) {
+      data['skippedMemberIds'] = skippedMemberIds;
     }
     await setDoc(doc(firestoreDb, this.collectionName, dateKey), data);
   }
 
-  /** Member immediately after `memberId` in rotation order (wraps to the start). */
-  nextAfter(members: Member[], memberId: string): Member | undefined {
+  /**
+   * Member after `memberId` in rotation order, skipping anyone listed in `exclude`
+   * (wraps around). Returns undefined only if every member is excluded (nobody left to
+   * assign to).
+   */
+  nextAfter(members: Member[], memberId: string, exclude: string[] = []): Member | undefined {
     if (!members.length) return undefined;
-    const idx = members.findIndex((m) => m.id === memberId);
-    if (idx === -1) return members[0];
-    return members[(idx + 1) % members.length];
+    const startIdx = members.findIndex((m) => m.id === memberId);
+    const start = startIdx === -1 ? 0 : startIdx;
+    for (let step = startIdx === -1 ? 0 : 1; step <= members.length; step++) {
+      const candidate = members[(start + step) % members.length];
+      if (!exclude.includes(candidate.id)) return candidate;
+    }
+    return undefined;
   }
 
   /**
-   * Marks `skippedMemberId` as skipped for `dateKey` and auto-assigns the next available
-   * member in rotation for that date instead. Only that date's record is affected — the
-   * skipped member is not removed from future rotation, since the next-turn calculation
-   * always continues from whoever was actually recorded.
-   * Returns the newly assigned member, or undefined if there's no one else to reassign to.
+   * Marks `skippedMemberId` (plus anyone already skipped earlier today, via
+   * `alreadySkippedIds`) as skipped for `dateKey` and auto-assigns the next available
+   * member in rotation for that date instead — walking past every already-skipped member,
+   * so this supports skipping 2, 3, or more roommates in a row on the same day, not just
+   * one. Only that date's record is affected — skipped members are not removed from
+   * future rotation, since the next-turn calculation always continues from whoever was
+   * actually recorded.
+   * Returns the newly assigned member, or undefined if literally everyone in rotation has
+   * been skipped for that date (nobody left to assign to).
    * Also notifies every member that the skip happened (Feature 7).
    */
   async skipMember(
     dateKey: string,
     skippedMemberId: string,
-    members: Member[]
+    members: Member[],
+    alreadySkippedIds: string[] = []
   ): Promise<Member | undefined> {
-    const assigned = this.nextAfter(members, skippedMemberId);
-    if (!assigned || assigned.id === skippedMemberId) return undefined;
-    await this.setRecord(dateKey, assigned.id, skippedMemberId);
+    const allSkipped = alreadySkippedIds.includes(skippedMemberId)
+      ? alreadySkippedIds
+      : [...alreadySkippedIds, skippedMemberId];
 
-    const skipped = members.find((m) => m.id === skippedMemberId);
+    const assigned = this.nextAfter(members, skippedMemberId, allSkipped);
+    if (!assigned) return undefined;
+    await this.setRecord(dateKey, assigned.id, allSkipped);
+
+    const skippedNames = members
+      .filter((m) => allSkipped.includes(m.id))
+      .map((m) => m.name);
+    const skippedLabel =
+      skippedNames.length > 1
+        ? `${skippedNames.slice(0, -1).join(', ')} and ${skippedNames[skippedNames.length - 1]}`
+        : skippedNames[0] ?? 'Someone';
+
     await this.notifications.notify(
       'skip',
       `${this.dutyLabel} Turn Skipped`,
-      `${skipped?.name ?? 'Someone'} skipped today's ${this.dutyLabel} Turn. ${assigned.name} has been assigned automatically.`,
+      `${skippedLabel} skipped today's ${this.dutyLabel} Turn. ${assigned.name} has been assigned automatically.`,
       this.dutyLabel === 'Water' ? '/water' : '/cooking'
     );
 

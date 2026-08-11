@@ -11,6 +11,27 @@
     <app-theme-picker />
   </div>
 
+  <div class="rm-card rm-config-card">
+    <div class="rm-config-card__head">
+      <span class="rm-config-card__icon rm-config-card__icon--active"><mat-icon>notifications_active</mat-icon></span>
+      <div>
+        <p class="rm-config-card__title">Push Notifications</p>
+        <p class="rm-config-card__desc">{{ notifStatusText() }}</p>
+      </div>
+    </div>
+
+    @if (notifPermission() !== 'granted' && notifPermission() !== 'unsupported') {
+      <button
+        mat-flat-button
+        color="primary"
+        class="rm-add-member-btn"
+        [disabled]="enabling()"
+        (click)="enableNotifications()">
+        {{ enabling() ? 'Enabling…' : 'Enable Notifications' }}
+      </button>
+    }
+  </div>
+
   <p class="rm-section-title">Coming soon</p>
   <div class="rm-future-grid">
     @for (cat of futureCategories; track cat.title) {

@@ -183,6 +183,19 @@
   color: var(--rm-text-muted);
   font-weight: 600;
 }
+.rm-next-turn__reassigned-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rm-accent, var(--rm-primary)) 16%, transparent);
+  color: var(--rm-accent, var(--rm-primary));
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
 .rm-next-turn__skip {
   display: flex;
   align-items: center;
@@ -396,4 +409,3 @@
   text-align: center;
   pointer-events: none;
 }
-

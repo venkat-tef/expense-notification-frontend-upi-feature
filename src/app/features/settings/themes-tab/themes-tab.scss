@@ -4,3 +4,113 @@
   margin-bottom: 16px;
   max-width: 480px;
 }
+
+
+.rm-mod-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+
+  h1 { font-size: 22px; }
+  p { color: var(--rm-text-muted); font-size: 13px; margin-top: 2px; }
+}
+
+.rm-mod-header__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.rm-mod-header__icon--settings {
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+}
+
+.rm-settings-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--rm-surface-alt);
+  border-radius: var(--rm-radius-md);
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.rm-settings-tab {
+  flex: 1;
+  min-width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--rm-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+  white-space: nowrap;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(&--active) { color: var(--rm-text); }
+  &:active { transform: scale(0.97); }
+
+  // Was a flat white pill + colored text — matches the same gradient
+  // treatment now used on primary CTA buttons (see styles.scss) so the
+  // active tab reads as a branded, premium element rather than a plain
+  // Material-default selection state.
+  &--active {
+    background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+    color: #ffffff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--rm-primary) 35%, transparent);
+
+    mat-icon { color: #ffffff; }
+  }
+}
+
+.rm-settings-panel {
+  animation: rmFadeIn 220ms ease both;
+}
+
+// Notification opt-in card, shown above the tab bar for every role. Same look as the
+// .rm-config-card styles in configuration-tab.scss (kept in sync intentionally, not
+// shared, since Angular component styles are view-scoped and this lives in a different
+// component).
+.rm-config-card {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.rm-config-card__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.rm-config-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--rm-surface-alt);
+  color: var(--rm-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rm-config-card__icon--active {
+  background: color-mix(in srgb, var(--rm-primary) 16%, transparent);
+  color: var(--rm-primary);
+}
+.rm-config-card__title { font-weight: 800; font-size: 14.5px; }
+.rm-config-card__desc { font-size: 12.5px; color: var(--rm-text-muted); margin-top: 2px; }

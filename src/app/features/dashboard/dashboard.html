@@ -78,9 +78,14 @@
       <mat-icon>arrow_forward</mat-icon>
       Next Water Turn
     </div>
-    @if (nextWaterMember; as next) {
+    @if (waterTurnMember; as next) {
       <div class="rm-next-turn__row">
-        <div class="rm-next-turn__name">{{ next.name }}</div>
+        <div class="rm-next-turn__name">
+          {{ next.name }}
+          @if (waterWasReassignedToday()) {
+            <span class="rm-next-turn__reassigned-tag">reassigned</span>
+          }
+        </div>
         @if (waterDoneToday()) {
           <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
         } @else {
@@ -99,9 +104,14 @@
       <mat-icon>arrow_forward</mat-icon>
       Next Garbage Turn
     </div>
-    @if (nextCookingMember; as next) {
+    @if (cookingTurnMember; as next) {
       <div class="rm-next-turn__row">
-        <div class="rm-next-turn__name">{{ next.name }}</div>
+        <div class="rm-next-turn__name">
+          {{ next.name }}
+          @if (cookingWasReassignedToday()) {
+            <span class="rm-next-turn__reassigned-tag">reassigned</span>
+          }
+        </div>
         @if (cookingDoneToday()) {
           <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
         } @else {

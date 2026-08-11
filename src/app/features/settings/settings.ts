@@ -34,7 +34,7 @@ export class Settings {
         ]
       : [
           { id: 'members', label: 'Members', icon: 'group' },
-          { id: 'themes', label: 'Themes', icon: 'palette' },
+          { id: 'themes', label: 'Configuration', icon: 'tune' },
         ]
   );
 
