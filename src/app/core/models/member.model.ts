@@ -1,5 +1,3 @@
-
-
 export type MemberRole = 'admin' | 'member' | 'guest';
 export type MemberStatus = 'active' | 'inactive';
 
@@ -22,6 +20,14 @@ export interface Member {
   upiId?: string;
   /** Only one member should have this true at a time — enforced by MemberService.setPaymentApprover(). */
   isPaymentApprover?: boolean;
+
+  /**
+   * Admin-controlled push notification toggle. Optional/undefined MUST be treated as
+   * enabled everywhere it's read (frontend and backend) — this is what keeps every
+   * existing member's push behavior unchanged after this field is introduced.
+   * Only an admin may change another member's value (enforced by firestore.rules).
+   */
+  notificationsEnabled?: boolean;
 }
 
 /** Input shape for creating a brand-new member with a login account. */

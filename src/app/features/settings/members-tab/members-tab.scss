@@ -61,6 +61,7 @@
   color: var(--rm-text-muted);
   cursor: grab;
   display: flex;
+  flex-shrink: 0; // explicit — never lets the drag handle eat into name width
   touch-action: none;
   &:active { cursor: grabbing; }
 }
@@ -83,16 +84,28 @@
   flex: 1;
   min-width: 0;
 }
+
+// Container is now a plain flex row — it no longer truncates itself.
+// The name TEXT truncates (see .rm-member-card__name-text below); the
+// ADMIN badge and verified icon are flex-shrink: 0 so they always render
+// in full and never get clipped by the row's overflow handling.
 .rm-member-card__name {
   font-weight: 700;
   font-size: 14.5px;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+// New: isolates the truncation/ellipsis behavior to just the name string,
+// so long names shrink/truncate instead of squeezing the ADMIN badge.
+.rm-member-card__name-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0; // required for ellipsis to take effect inside a flex item
 }
+
 .rm-member-card__meta {
   font-size: 12px;
   color: var(--rm-text-muted);
@@ -106,9 +119,10 @@
   letter-spacing: 0.04em;
   color: var(--rm-primary);
   background: color-mix(in srgb, var(--rm-primary) 14%, transparent);
-  padding: 2px 7px;
+  padding: 3px 9px; // was 2px 7px — extra horizontal room so "ADMIN" never clips
   border-radius: 999px;
-  flex-shrink: 0;
+  white-space: nowrap; // never let the badge's own text wrap or clip
+  flex-shrink: 0;      // badge keeps its full size; name text shrinks instead
 }
 .rm-approver-icon {
   font-size: 15px;
@@ -120,6 +134,8 @@
 
 // .rm-status-chip / .rm-status-chip--inactive / .rm-menu-danger now live in the global
 // styles.scss patch (see styles.append.scss) — shared with Announcements tab too.
+// .rm-status-chip additionally locks flex-shrink: 0 there so it keeps its own
+// natural width and is never blamed for stealing space from the name.
 
 
 .rm-member-card__drag-placeholder {
@@ -154,6 +170,44 @@
 
   mat-icon { color: var(--rm-primary); flex-shrink: 0; }
   span { flex: 1; color: var(--rm-text-muted); }
+}
+
+// Notification bell + toggle — untouched. Bell/toggle spacing and the
+// theme-colored toggle are confirmed working; nothing in this block changes.
+.rm-notif-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.rm-notif-toggle__icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--rm-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ---------------------------------------------------------------------------
+// 3-dot menu button — fixes the large empty gap between the toggle and the
+// dots, which was also silently stealing width from .rm-member-card__info
+// (that's why "venki" was truncating to "v..."). Angular Material's MDC
+// icon-button reserves a 48px invisible touch-target box around the visible
+// icon by default. Shrinking that box to match the icon's actual visible
+// size (36px) reclaims the dead space and lets .rm-member-card__info's
+// existing flex: 1 absorb it. Icon appearance, ripple, click behavior, and
+// menu trigger are all unaffected — only the surrounding invisible box
+// shrinks. Toggle color/size/behavior are untouched.
+// ---------------------------------------------------------------------------
+.rm-member-card > button[mat-icon-button] {
+  --mdc-icon-button-state-layer-size: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .rm-empty-state {

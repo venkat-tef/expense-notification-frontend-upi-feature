@@ -63,7 +63,7 @@
 
           <div class="rm-member-card__info">
             <p class="rm-member-card__name">
-              {{ member.name }}
+              <span class="rm-member-card__name-text">{{ member.name }}</span>
               @if (member.role === 'admin') { <span class="rm-role-tag">Admin</span> }
               @if (member.isPaymentApprover) { <mat-icon class="rm-approver-icon" title="Payment approver">verified</mat-icon> }
             </p>
@@ -72,6 +72,19 @@
 
           <span class="rm-status-chip" [class.rm-status-chip--inactive]="member.status === 'inactive'">
             {{ member.status === 'inactive' ? 'Inactive' : 'Active' }}
+          </span>
+
+          <span class="rm-notif-toggle" title="Push notifications" (click)="$event.stopPropagation()">
+            <mat-icon class="rm-notif-toggle__icon">
+              {{ notificationsEnabled(member) ? 'notifications_active' : 'notifications_off' }}
+            </mat-icon>
+            <mat-slide-toggle
+              color="primary"
+              [checked]="notificationsEnabled(member)"
+              [disabled]="savingNotificationsId() === member.id"
+              (change)="toggleNotifications(member)"
+              [attr.aria-label]="'Push notifications for ' + member.name"
+            ></mat-slide-toggle>
           </span>
 
           <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
@@ -112,7 +125,7 @@
           <span class="rm-member-card__avatar">{{ initials(member.name) }}</span>
           <div class="rm-member-card__info">
             <p class="rm-member-card__name">
-              {{ member.name }}
+              <span class="rm-member-card__name-text">{{ member.name }}</span>
               @if (member.role === 'admin') { <span class="rm-role-tag">Admin</span> }
               @if (member.isPaymentApprover) { <mat-icon class="rm-approver-icon" title="Payment approver">verified</mat-icon> }
             </p>

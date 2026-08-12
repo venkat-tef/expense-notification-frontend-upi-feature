@@ -95,6 +95,9 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
             status: data['status'],
             upiId: data['upiId'] ?? undefined,
             isPaymentApprover: data['isPaymentApprover'] ?? undefined,
+            // Missing/undefined MUST mean enabled — every existing reader of this field
+            // (MembersTab, pushService.js) treats undefined the same as `true`.
+            notificationsEnabled: data['notificationsEnabled'] ?? undefined,
           };
         });
         this.members.set(list);
@@ -226,6 +229,17 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     await updateDoc(doc(firestoreDb, COLLECTION, uid), { upiId: upiId.trim() || null });
+  }
+
+  /**
+   * Admin-only (enforced by Firestore rules — see firestore.rules: only the caller's own
+   * admin-role doc lets this write succeed; a non-admin's request is rejected server-side
+   * even if this method is somehow called from the UI). Toggles push notifications for
+   * `memberId`. Does not touch FCM tokens, in-app notification/bell records, or any other
+   * member's data — this only ever writes a single boolean field on one member document.
+   */
+  async setNotificationsEnabled(memberId: string, enabled: boolean): Promise<void> {
+    await updateDoc(doc(firestoreDb, COLLECTION, memberId), { notificationsEnabled: enabled });
   }
 
   /** Unchanged — still supports the original name-only seed for first-run/demo data. */

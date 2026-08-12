@@ -58,8 +58,18 @@ service cloud.firestore {
 
     // Unchanged — all other collections (water_records, cooking_records, expenses, etc.)
     // keep working exactly as before.
+    //
+    // SECURITY FIX: this used to also match /members/{memberId}, which — because
+    // Firestore rules are additive (a request is allowed if ANY matching rule allows
+    // it) — let any signed-in member bypass the admin-only update rule above and
+    // rewrite another member's role/isPaymentApprover/notificationsEnabled/etc.
+    // Excluding the `members` collection here does not remove any permission members
+    // had, because the `match /members/{memberId}` block above already grants the
+    // full set of intended read/create/update/delete permissions on its own — this
+    // catch-all was never needed for `members` and only ever widened its access.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && !(request.path.size() > 3 && request.path[3] == 'members');
     }
     match /notifications/{id} {
   allow read: if request.auth != null;

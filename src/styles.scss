@@ -870,3 +870,38 @@ p {
   );
 }
 
+/* ---------------------------------------------------------------------------
+   Theme-aware Material slide toggle (member row notification switch)
+   ---------------------------------------------------------------------------
+   The --mdc-switch-* / --mat-switch-* custom-property approach doesn't
+   reliably repaint the MDC switch on every Angular Material version (it can
+   fall back to internal M3 system tokens instead of the ones we set).
+   Overriding the actual rendered track/handle elements directly is the
+   robust fix — same !important pattern already used for dialogs/snackbar
+   above. Only the CHECKED (selected) state is touched; the unchecked/off
+   state already renders correctly as neutral gray and is left alone.
+   --------------------------------------------------------------------------- */
+
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled .mdc-switch__track::before,
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled .mdc-switch__track::after {
+  background: var(--rm-primary) !important;
+  border-color: var(--rm-primary) !important;
+}
+
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled .mdc-switch__handle::after {
+  background: #ffffff !important;
+}
+
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled .mdc-switch__icon--on {
+  fill: var(--rm-primary) !important;
+}
+
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled:hover:not(:focus):not(:active) .mdc-switch__track::after,
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected:enabled:focus:not(:active) .mdc-switch__track::after {
+  background: var(--rm-primary) !important;
+}
+
+/* Ripple on interaction should match theme too, not Material default blue */
+.mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected .mat-ripple-element {
+  background-color: color-mix(in srgb, var(--rm-primary) 30%, transparent) !important;
+}
