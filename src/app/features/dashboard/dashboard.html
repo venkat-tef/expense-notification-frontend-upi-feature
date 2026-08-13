@@ -1,49 +1,46 @@
 <div class="rm-page rm-fade-in">
 <header class="rm-dash-header">
-  <div class="rm-dash-header__text">
-    <!-- <p class="rm-dash-header__eyebrow">
-      Welcome back{{ currentMemberName ? ', ' + currentMemberName : '' }} 👋
-    </p> -->
-
-    <!-- <div class="rm-brand">
-      <img src="assets/nestly.png" alt="Nestly" class="rm-brand__logo" />
-    </div> -->
-
+  <div class="rm-dash-header__top">
     <div class="rm-brand">
-  <img
-    [src]="logoSrc()"
-    alt="Nestly"
-    class="rm-brand__logo"
-  />
-</div>
+      <img
+        [src]="logoSrc()"
+        alt="Nestly"
+        class="rm-brand__logo"
+      />
+    </div>
 
-   <p class="rm-dash-header__sub">
-  Hi @if (currentMemberName) {<span class="rm-dash-header__name">{{ currentMemberName }}</span>}, keep water and garbage duties fair, every day.
-</p>
+    <div class="rm-dash-header__actions">
+      <button
+        mat-icon-button
+        class="rm-dash-header__bell"
+        (click)="openNotifications()"
+        aria-label="Notifications"
+      >
+        <mat-icon>notifications</mat-icon>
+        @if (notificationService.unreadCount() > 0) {
+          <span class="rm-bell-dot">{{ notificationService.unreadCount() }}</span>
+        }
+      </button>
+
+      <button
+        mat-icon-button
+        class="rm-dash-header__logout"
+        (click)="logout()"
+        aria-label="Logout"
+        matTooltip="Logout"
+      >
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
   </div>
 
-  <div class="rm-dash-header__actions">
- <button
-  mat-icon-button
-  class="rm-dash-header__bell"
-  (click)="openNotifications()"
-  aria-label="Notifications"
->
-  <mat-icon>notifications</mat-icon>
-  @if (notificationService.unreadCount() > 0) {
-    <span class="rm-bell-dot">{{ notificationService.unreadCount() }}</span>
-  }
-</button>
-
-    <button
-      mat-icon-button
-      class="rm-dash-header__logout"
-      (click)="logout()"
-      aria-label="Logout"
-      matTooltip="Logout"
-    >
-      <mat-icon>logout</mat-icon>
-    </button>
+  <div class="rm-dash-header__text">
+    <p class="rm-dash-header__hello">
+      {{ greeting() }}@if (currentMemberName) {, <span class="rm-dash-header__name">{{ currentMemberName }}</span>} <span class="rm-dash-header__wave" aria-hidden="true">👋</span>
+    </p>
+    <p class="rm-dash-header__sub">
+      Keep water and garbage duties fair, every day.
+    </p>
   </div>
 </header>
   <br/>
@@ -133,4 +130,75 @@
       <span class="rm-dash-members__empty">No roommates yet — add some in Settings.</span>
     }
   </div> -->
+
+  <!-- ============================================================
+       ADDITIVE — QUICK ACTIONS
+       Reuses the same open()/router.navigateByUrl already used above.
+       ============================================================ -->
+  <!-- <p class="rm-section-title">Quick Actions</p>
+  <div class="rm-quick-actions">
+    @for (action of quickActions; track action.path) {
+      <button
+        class="rm-quick-action"
+        [style.--rm-qa-color]="action.color"
+        (click)="open(action.path)"
+      >
+        <span class="rm-quick-action__icon"><mat-icon>{{ action.icon }}</mat-icon></span>
+        <span class="rm-quick-action__label">{{ action.label }}</span>
+      </button>
+    }
+  </div> -->
+
+  <!-- ============================================================
+       ADDITIVE — THIS MONTH EXPENSE SUMMARY
+       Numbers are derived (mirrored) from the same Expense/MonthlySummary
+       services the Expenses screen already uses — nothing new is written.
+       ============================================================ -->
+  @if (hasExpenseData()) {
+    <p class="rm-section-title">This Month</p>
+    <div class="rm-card rm-expense-summary">
+      <div class="rm-expense-summary__total">
+        <span class="rm-expense-summary__amount">₹{{ monthExpenseTotal() | number: '1.0-0' }}</span>
+        <span class="rm-expense-summary__label">Total Expenses</span>
+      </div>
+      <div class="rm-expense-summary__split">
+        <div class="rm-expense-summary__split-item">
+          <span class="rm-expense-summary__split-label">You Spent</span>
+          <span class="rm-expense-summary__split-value rm-expense-summary__split-value--spent">
+            ₹{{ youSpent() | number: '1.0-0' }}
+          </span>
+        </div>
+        <div class="rm-expense-summary__divider"></div>
+        <div class="rm-expense-summary__split-item">
+          <span class="rm-expense-summary__split-label">You Get</span>
+          <span class="rm-expense-summary__split-value rm-expense-summary__split-value--get">
+            ₹{{ youGet() | number: '1.0-0' }}
+          </span>
+        </div>
+      </div>
+      <button class="rm-expense-summary__cta" (click)="open('/expenses')">
+        View details <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- ============================================================
+       ADDITIVE — RECENT ACTIVITY
+       Reuses NotificationService.notifications() (same feed as the bell).
+       ============================================================ -->
+  @if (recentActivity().length > 0) {
+    <p class="rm-section-title">Recent Activity</p>
+    <div class="rm-card rm-activity-list">
+      @for (item of recentActivity(); track item.id) {
+        <div class="rm-activity-item">
+          <span class="rm-activity-item__icon"><mat-icon>{{ activityIcon(item.type) }}</mat-icon></span>
+          <div class="rm-activity-item__text">
+            <span class="rm-activity-item__title">{{ item.title }}</span>
+            <span class="rm-activity-item__body">{{ item.body }}</span>
+          </div>
+          <span class="rm-activity-item__time">{{ timeAgo(item.createdAt) }}</span>
+        </div>
+      }
+    </div>
+  }
 </div>

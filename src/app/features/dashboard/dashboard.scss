@@ -1,9 +1,23 @@
 .rm-dash-header {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+  // margin-bottom: 20px;
+}
+
+/* ============================================================
+   ADDITIVE — HEADER TOP ROW
+   Puts the logo and the bell/logout actions on one row so their vertical
+   position is locked to the logo instead of to the (variable-height)
+   greeting text block. This is what was breaking on Android — a tall
+   greeting/subtitle pushed the actions column out of alignment there,
+   even though it looked fine on iPhone.
+   ============================================================ */
+.rm-dash-header__top {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
 }
 
 .rm-dash-header__text {
@@ -23,6 +37,46 @@
 .rm-dash-header__sub {
   color: var(--rm-text-muted);
   font-size: 14px;
+}
+
+/* ============================================================
+   ADDITIVE — PREMIUM GREETING
+   Auto-updates (Good morning/afternoon/evening) via greeting() in the
+   component; styled with a slow shimmering gradient + waving emoji so it
+   reads as a polished, "premium" hero line rather than a plain label.
+   ============================================================ */
+.rm-dash-header__hello {
+  margin: 4px 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  background: linear-gradient(100deg, var(--rm-primary) 0%, #f2994a 45%, var(--rm-primary) 90%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rm-greeting-shimmer 5s ease-in-out infinite;
+}
+
+.rm-dash-header__wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: rm-greeting-wave 2.4s ease-in-out infinite;
+}
+
+@keyframes rm-greeting-shimmer {
+  0% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+  100% { background-position: 0% center; }
+}
+
+@keyframes rm-greeting-wave {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
 }
 
 .rm-dash-header__logout {
@@ -285,9 +339,8 @@
 
 .rm-dash-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 6px;
   // margin-bottom: 24px;
   // padding-bottom: 18px;
   // border-bottom: 1px solid var(--rm-border);
@@ -408,4 +461,229 @@
   line-height: 16px;
   text-align: center;
   pointer-events: none;
+}
+
+/* ============================================================
+   ADDITIVE — QUICK ACTIONS
+   ============================================================ */
+
+.rm-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.rm-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: var(--rm-radius-md);
+  border: 1px solid var(--rm-border);
+  background: var(--rm-surface);
+  box-shadow: var(--rm-shadow);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  min-height: 44px; /* comfortable tap target */
+}
+
+.rm-quick-action:hover,
+.rm-quick-action:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--rm-shadow-hover);
+  border-color: color-mix(in srgb, var(--rm-qa-color) 40%, var(--rm-border));
+}
+
+.rm-quick-action:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.rm-quick-action__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rm-qa-color) 16%, transparent);
+  color: var(--rm-qa-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.rm-quick-action__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rm-text);
+}
+
+/* ============================================================
+   ADDITIVE — THIS MONTH EXPENSE SUMMARY
+   ============================================================ */
+
+.rm-expense-summary {
+  position: relative;
+  padding: 22px 20px 18px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--rm-primary) 10%, transparent), transparent 65%),
+    var(--rm-surface);
+}
+
+.rm-expense-summary__total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+
+.rm-expense-summary__amount {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--rm-text);
+}
+
+.rm-expense-summary__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rm-expense-summary__split {
+  display: flex;
+  align-items: center;
+  background: var(--rm-surface-alt);
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-md);
+  padding: 14px 4px;
+  margin-bottom: 14px;
+}
+
+.rm-expense-summary__split-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rm-expense-summary__split-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--rm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rm-expense-summary__split-value {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.rm-expense-summary__split-value--owe { color: #e64a19; }
+.rm-expense-summary__split-value--get { color: var(--rm-success); }
+.rm-expense-summary__split-value--spent { color: var(--rm-primary); }
+
+.rm-expense-summary__divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--rm-border);
+}
+
+.rm-expense-summary__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--rm-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--rm-primary);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { background: color-mix(in srgb, var(--rm-primary) 10%, transparent); }
+}
+
+/* ============================================================
+   ADDITIVE — RECENT ACTIVITY
+   ============================================================ */
+
+.rm-activity-list {
+  padding: 6px 4px;
+  margin-bottom: 20px;
+}
+
+.rm-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rm-border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.rm-activity-item__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--rm-surface-alt);
+  color: var(--rm-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.rm-activity-item__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rm-activity-item__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rm-text);
+}
+
+.rm-activity-item__body {
+  font-size: 12.5px;
+  color: var(--rm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rm-activity-item__time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--rm-text-muted);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+@media (max-width: 380px) {
+  .rm-expense-summary__amount { font-size: 28px; }
+  .rm-quick-action__label { font-size: 11.5px; }
 }
