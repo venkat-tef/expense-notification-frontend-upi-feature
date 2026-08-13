@@ -169,6 +169,48 @@ export class MembersTab {
     }
   }
 
+  // --- My Profile Photo (self-service, same upload pattern as expense bill images) ------
+
+  readonly savingPhoto = signal(false);
+
+  /** Same validation as expense-dialog.ts's onFileSelected — kept local per that file's own pattern. */
+  async onPhotoSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // allow re-selecting the same file later
+
+    if (!file) return;
+
+    this.savingPhoto.set(true);
+    try {
+      const uploaded = await this.memberService.uploadOwnPhoto(file);
+      await this.memberService.updateOwnPhoto(uploaded.url, uploaded.publicId);
+      this.snackBar.open('Profile photo updated.', undefined, {
+        duration: 1800,
+        panelClass: 'rm-snack-success',
+      });
+    } catch (err) {
+      console.error('Failed to update profile photo', err);
+      const message = err instanceof Error ? err.message : 'Could not update your photo. Please try again.';
+      this.snackBar.open(message, 'OK', { duration: 3000 });
+    } finally {
+      this.savingPhoto.set(false);
+    }
+  }
+
+  async removeOwnPhoto(): Promise<void> {
+    this.savingPhoto.set(true);
+    try {
+      await this.memberService.removeOwnPhoto();
+      this.snackBar.open('Profile photo removed.', undefined, { duration: 1800 });
+    } catch (err) {
+      console.error('Failed to remove profile photo', err);
+      this.snackBar.open('Could not remove your photo. Please try again.', 'OK', { duration: 3000 });
+    } finally {
+      this.savingPhoto.set(false);
+    }
+  }
+
   initials(name: string): string {
     return name
       .split(' ')

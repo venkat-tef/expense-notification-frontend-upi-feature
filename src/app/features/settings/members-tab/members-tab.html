@@ -1,6 +1,42 @@
 <div class="rm-fade-in">
 
   @if (memberService.currentMember(); as me) {
+    <div class="rm-card rm-upi-card">
+      <div class="rm-upi-card__head">
+        <span class="rm-photo-card__avatar">
+          @if (me.photoUrl) {
+            <img [src]="me.photoUrl" alt="Your profile photo" />
+          } @else {
+            {{ initials(me.name) }}
+          }
+        </span>
+        <div>
+          <p class="rm-upi-card__title">My Profile Photo</p>
+          <p class="rm-upi-card__hint">Visible to your roommates wherever your name appears.</p>
+        </div>
+      </div>
+
+      <div class="rm-photo-card__actions">
+        <label class="rm-expense-form__upload" [class.rm-photo-card__upload--disabled]="savingPhoto()">
+          <mat-icon>upload</mat-icon>
+          {{ savingPhoto() ? 'Saving…' : (me.photoUrl ? 'Replace photo' : 'Upload photo') }}
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            [disabled]="savingPhoto()"
+            (change)="onPhotoSelected($event)"
+            hidden
+          />
+        </label>
+        @if (me.photoUrl) {
+          <button mat-button [disabled]="savingPhoto()" (click)="removeOwnPhoto()">
+            <mat-icon>close</mat-icon>Remove
+          </button>
+        }
+      </div>
+      <span class="rm-expense-form__hint">JPG, PNG, or WEBP · up to 5 MB</span>
+    </div>
+
     @if (me.isPaymentApprover) {
       <div class="rm-card rm-upi-card">
         <div class="rm-upi-card__head">
@@ -59,7 +95,13 @@
             <mat-icon>drag_indicator</mat-icon>
           </span>
 
-          <span class="rm-member-card__avatar">{{ initials(member.name) }}</span>
+          <span class="rm-member-card__avatar">
+            @if (member.photoUrl) {
+              <img [src]="member.photoUrl" [alt]="member.name" />
+            } @else {
+              {{ initials(member.name) }}
+            }
+          </span>
 
           <div class="rm-member-card__info">
             <p class="rm-member-card__name">
@@ -122,7 +164,13 @@
     <div class="rm-member-list">
       @for (member of displayList; track member.id) {
         <div class="rm-card rm-member-card rm-member-card--readonly">
-          <span class="rm-member-card__avatar">{{ initials(member.name) }}</span>
+          <span class="rm-member-card__avatar">
+            @if (member.photoUrl) {
+              <img [src]="member.photoUrl" [alt]="member.name" />
+            } @else {
+              {{ initials(member.name) }}
+            }
+          </span>
           <div class="rm-member-card__info">
             <p class="rm-member-card__name">
               <span class="rm-member-card__name-text">{{ member.name }}</span>

@@ -10,4 +10,9 @@ export const environment = {
   appId: "1:713880758367:web:595534eb6d93c33e4ed3ea",
   },
   vapidKey: 'BECsyfOuBKgOYx7DdRZ-o8tUBccfinmcMYq4Ig11nnqSI3sdDHztSjwN_JghGY34lUYoyFiLQS_Hl1g-TPn5eDs',
+
+    cloudinary: {
+    cloudName: 'eaqx7g3j',
+    uploadPreset: 'nestly_uploads',
+  },
 };

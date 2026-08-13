@@ -17,4 +17,9 @@ export const environment = {
 
   },
    vapidKey: 'BECsyfOuBKgOYx7DdRZ-o8tUBccfinmcMYq4Ig11nnqSI3sdDHztSjwN_JghGY34lUYoyFiLQS_Hl1g-TPn5eDs',
+
+     cloudinary: {
+    cloudName: 'eaqx7g3j',
+    uploadPreset: 'nestly_uploads',
+  },
 };

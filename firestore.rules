@@ -14,10 +14,17 @@ service cloud.firestore {
       // UPI Settlement: admins can update anything (name, role, isPaymentApprover, etc.);
       // any member may additionally self-service-update ONLY their own `upiId` field —
       // nobody else knows their UPI ID, so this doesn't need to go through an admin.
+      //
+      // Profile photo: same self-service reasoning — a member may update ONLY their own
+      // `photoUrl`/`photoPath`/`photoPublicId`, so nobody can set/replace another
+      // member's photo from the normal member UI (enforced here server-side, not just
+      // hidden in the UI).
       allow update: if request.auth != null && (
         get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin' ||
         (request.auth.uid == memberId &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upiId']))
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upiId'])) ||
+        (request.auth.uid == memberId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photoUrl', 'photoPath', 'photoPublicId']))
       );
 
       match /fcmTokens/{tokenId} {

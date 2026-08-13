@@ -78,6 +78,7 @@ export class ExpenseDialog {
 
   private readonly existingImageUrl = this.data.expense?.billImageUrl ?? '';
   private readonly existingImagePath = this.data.expense?.billImagePath ?? '';
+  private readonly existingImagePublicId = this.data.expense?.billImagePublicId ?? '';
   private selectedFile: File | null = null;
   private imageRemoved = false;
   readonly previewUrl = signal<string | null>(this.data.expense?.billImageUrl ?? null);
@@ -154,19 +155,22 @@ if (!amountRaw) {
     this.saving.set(true);
     try {
       let billImageUrl = this.existingImageUrl;
-      let billImagePath = this.existingImagePath;
-      const oldPath = this.existingImagePath;
+      let billImagePath = this.existingImagePath; // legacy Firebase Storage path, if any
+      let billImagePublicId = this.existingImagePublicId; // Cloudinary metadata, if any
+      const oldPath = this.existingImagePath; // only legacy files need explicit cleanup
 
       if (this.imageRemoved) {
         billImageUrl = '';
         billImagePath = '';
+        billImagePublicId = '';
       }
 
       if (this.selectedFile) {
         const monthKey = this.expenseDate().slice(0, 7);
         const uploaded = await this.expenseService.uploadBillImage(this.selectedFile, monthKey);
         billImageUrl = uploaded.url;
-        billImagePath = uploaded.path;
+        billImagePublicId = uploaded.publicId;
+        billImagePath = ''; // a new upload always replaces any legacy Storage-backed image
       }
 
       const result: ExpenseDialogResult = {
@@ -178,9 +182,14 @@ if (!amountRaw) {
         notes: this.notes().trim() || undefined,
         billImageUrl: billImageUrl || undefined,
         billImagePath: billImagePath || undefined,
+        billImagePublicId: billImagePublicId || undefined,
       };
 
-      // Clean up the old image from Storage if it was replaced or removed.
+      // Legacy cleanup only — pre-Cloudinary-migration images stored in Firebase
+      // Storage still get deleted on replace/remove, exactly as before. New Cloudinary
+      // uploads have no client-side delete (unsigned uploads never expose the API
+      // secret needed for that), so a replaced/removed Cloudinary asset is simply no
+      // longer referenced rather than deleted.
       if (oldPath && oldPath !== billImagePath) {
         this.expenseService.deleteStorageFile(oldPath).catch(() => {});
       }
@@ -188,7 +197,8 @@ if (!amountRaw) {
       this.ref.close(result);
     } catch (err) {
       console.error('Failed to save expense', err);
-      this.snackBar.open('Could not save the expense. Please try again.', 'OK', { duration: 3000 });
+      const message = err instanceof Error ? err.message : 'Could not save the expense. Please try again.';
+      this.snackBar.open(message, 'OK', { duration: 3000 });
     } finally {
       this.saving.set(false);
     }

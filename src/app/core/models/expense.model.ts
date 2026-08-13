@@ -31,9 +31,16 @@ export interface Expense {
   /** YYYY-MM — derived from expenseDate, used to group expenses by month. */
   monthKey: string;
   notes?: string;
+  /** Display URL for the attached bill image/document — Cloudinary `secure_url` for new
+   *  uploads, or a legacy Firebase Storage download URL for expenses created before the
+   *  Cloudinary migration. Works identically either way for display/opening. */
   billImageUrl?: string;
-  /** Firebase Storage path (not the download URL) — needed to delete the file later. */
+  /** LEGACY ONLY — Firebase Storage path, used only to delete pre-Cloudinary-migration
+   *  files. Never written by new uploads; only ever present on older expense docs. */
   billImagePath?: string;
+  /** Cloudinary `public_id` for the attachment — metadata only (see CloudinaryService;
+   *  cannot be used to delete the asset from the client without exposing the API secret). */
+  billImagePublicId?: string;
   createdAt: number;
   updatedAt: number;
 }

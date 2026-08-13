@@ -12,9 +12,7 @@ import {
 } from 'firebase/firestore';
 import {
   deleteObject,
-  getDownloadURL,
   ref,
-  uploadBytes,
 } from 'firebase/storage';
 
 import { firestoreDb, firebaseStorage } from './firebase';
@@ -22,6 +20,7 @@ import { Expense, ExpenseCategory } from '../models/expense.model';
 import { NotificationService } from './notification.service';
 import { MemberService } from './member.service';
 import { AuthService } from './auth.service';
+import { CloudinaryService } from './cloudinary.service';
 
 const COLLECTION = 'expenses';
 const EVENTS_COLLECTION = 'expenseEvents';
@@ -35,6 +34,7 @@ export interface ExpenseInput {
   notes?: string;
   billImageUrl?: string;
   billImagePath?: string;
+  billImagePublicId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -45,6 +45,7 @@ export class ExpenseService {
   private readonly notifications = inject(NotificationService);
   private readonly memberService = inject(MemberService);
   private readonly auth = inject(AuthService);
+  private readonly cloudinary = inject(CloudinaryService);
 
   constructor() {
     this.listen();
@@ -73,6 +74,7 @@ export class ExpenseService {
             notes: data['notes'] ?? undefined,
             billImageUrl: data['billImageUrl'] ?? undefined,
             billImagePath: data['billImagePath'] ?? undefined,
+            billImagePublicId: data['billImagePublicId'] ?? undefined,
             createdAt:
               data['createdAt']?.toMillis?.() ?? Date.now(),
             updatedAt:
@@ -129,6 +131,10 @@ export class ExpenseService {
       data['billImagePath'] = input.billImagePath;
     }
 
+    if (input.billImagePublicId) {
+      data['billImagePublicId'] = input.billImagePublicId;
+    }
+
     // IMPORTANT:
     // Capture the newly generated Firestore expense ID.
     const expenseRef = await addDoc(
@@ -178,6 +184,7 @@ export class ExpenseService {
         notes: input.notes ?? null,
         billImageUrl: input.billImageUrl ?? null,
         billImagePath: input.billImagePath ?? null,
+        billImagePublicId: input.billImagePublicId ?? null,
 
         updatedByUid:
           this.auth.user()?.uid ?? input.paidByMemberId,
@@ -273,8 +280,12 @@ export class ExpenseService {
   }
 
   // ============================================================
-  // DELETE STORAGE FILE
+  // DELETE STORAGE FILE (LEGACY ONLY)
   // ============================================================
+  //
+  // Only ever called with a `billImagePath` from an expense created before the
+  // Cloudinary migration. New uploads never set billImagePath, so this simply has
+  // nothing to do for any post-migration expense.
 
   async deleteStorageFile(path: string): Promise<void> {
     try {
@@ -291,33 +302,19 @@ export class ExpenseService {
   }
 
   // ============================================================
-  // UPLOAD BILL IMAGE
+  // UPLOAD BILL ATTACHMENT (Cloudinary)
   // ============================================================
+  //
+  // Uses the shared CloudinaryService (unsigned upload preset) instead of Firebase
+  // Storage. Kept the same method name/signature the expense dialog already calls,
+  // to minimize churn — only what happens inside changed.
 
   async uploadBillImage(
     file: File,
     monthKey: string
-  ): Promise<{ path: string; url: string }> {
-    const path =
-      `bill-images/${monthKey}/${Date.now()}-${file.name}`;
-
-    const storageRef = ref(
-      firebaseStorage,
-      path
-    );
-
-    await uploadBytes(
-      storageRef,
-      file
-    );
-
-    const url = await getDownloadURL(
-      storageRef
-    );
-
-    return {
-      path,
-      url,
-    };
+  ): Promise<{ url: string; publicId: string }> {
+    const folder = `nestly/bill-images/${monthKey}`;
+    const uploaded = await this.cloudinary.uploadFile(file, folder);
+    return { url: uploaded.url, publicId: uploaded.publicId };
   }
 }

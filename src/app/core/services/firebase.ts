@@ -26,5 +26,7 @@ export const firestoreDb = (() => {
 
 export const firebaseAuth = getAuth(firebaseApp);
 
-/** Used to store expense bill images (see ExpenseService.uploadBillImage). */
+/** LEGACY — retained only so pre-Cloudinary-migration bill images/profile photos
+ *  (stored here before this feature moved to Cloudinary) can still be deleted on
+ *  replace/remove. No NEW uploads use Firebase Storage — see CloudinaryService. */
 export const firebaseStorage = getStorage(firebaseApp);

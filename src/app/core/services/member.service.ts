@@ -14,10 +14,15 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { firebaseConfig, firestoreDb } from './firebase';
+import {
+  deleteObject,
+  ref,
+} from 'firebase/storage';
+import { firebaseConfig, firestoreDb, firebaseStorage } from './firebase';
 import { AuthService } from './auth.service';
 import { Member, MemberUpdateInput, NewMemberInput } from '../models/member.model';
 import { NotificationService } from './notification.service';
+import { CloudinaryService } from './cloudinary.service';
 
 const COLLECTION = 'members';
 
@@ -25,6 +30,7 @@ const COLLECTION = 'members';
 export class MemberService {
   private readonly auth = inject(AuthService);
   private readonly notifications = inject(NotificationService);
+  private readonly cloudinary = inject(CloudinaryService);
 
   readonly members = signal<Member[]>([]);
   readonly loaded = signal(false);
@@ -95,6 +101,12 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
             status: data['status'],
             upiId: data['upiId'] ?? undefined,
             isPaymentApprover: data['isPaymentApprover'] ?? undefined,
+            // Profile photo — undefined/missing simply means "no photo" everywhere it's
+            // read, so every existing member without one keeps showing initials exactly
+            // as before.
+            photoUrl: data['photoUrl'] ?? undefined,
+            photoPath: data['photoPath'] ?? undefined,
+            photoPublicId: data['photoPublicId'] ?? undefined,
             // Missing/undefined MUST mean enabled — every existing reader of this field
             // (MembersTab, pushService.js) treats undefined the same as `true`.
             notificationsEnabled: data['notificationsEnabled'] ?? undefined,
@@ -240,6 +252,81 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
    */
   async setNotificationsEnabled(memberId: string, enabled: boolean): Promise<void> {
     await updateDoc(doc(firestoreDb, COLLECTION, memberId), { notificationsEnabled: enabled });
+  }
+
+  // ============================================================
+  // PROFILE PHOTO (self-service only)
+  // ============================================================
+  //
+  // Uses the shared CloudinaryService (unsigned upload preset), same architecture as
+  // ExpenseService's bill-attachment upload — kept local to MemberService instead of
+  // calling ExpenseService, since ExpenseService already injects MemberService;
+  // importing it back here would create a circular dependency.
+
+  /**
+   * Validates and uploads a new profile photo for the CURRENTLY SIGNED-IN member.
+   * Does not touch Firestore — call updateOwnPhoto() after to persist the resulting
+   * URL/publicId. Throws on invalid file type/size/upload failure so the caller's UI
+   * can show a message and never gets stuck in a "saving" state.
+   */
+  async uploadOwnPhoto(file: File): Promise<{ url: string; publicId: string }> {
+    const uid = this.auth.user()?.uid;
+    if (!uid) throw new Error('Not signed in.');
+
+    const uploaded = await this.cloudinary.uploadFile(file, `nestly/profile-photos/${uid}`);
+    return { url: uploaded.url, publicId: uploaded.publicId };
+  }
+
+  /**
+   * Persists the new photo on the signed-in member's own doc. If they had a LEGACY
+   * (pre-Cloudinary-migration) photo in Firebase Storage, that old file is deleted,
+   * same replace pattern as before. A previous Cloudinary photo is simply no longer
+   * referenced — unsigned uploads have no client-side delete (see CloudinaryService).
+   */
+  async updateOwnPhoto(url: string, publicId: string): Promise<void> {
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
+
+    const previousLegacyPath = this.currentMember()?.photoPath;
+
+    await updateDoc(doc(firestoreDb, COLLECTION, uid), {
+      photoUrl: url,
+      photoPublicId: publicId,
+      photoPath: null, // any new upload replaces a legacy Storage-backed photo
+    });
+
+    if (previousLegacyPath) {
+      await this.deleteLegacyPhotoFile(previousLegacyPath);
+    }
+  }
+
+  /** Clears the signed-in member's own photo, and deletes the legacy Storage file, if any. */
+  async removeOwnPhoto(): Promise<void> {
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
+
+    const previousLegacyPath = this.currentMember()?.photoPath;
+
+    await updateDoc(doc(firestoreDb, COLLECTION, uid), {
+      photoUrl: null,
+      photoPath: null,
+      photoPublicId: null,
+    });
+
+    if (previousLegacyPath) {
+      await this.deleteLegacyPhotoFile(previousLegacyPath);
+    }
+  }
+
+  /** LEGACY ONLY — deletes a pre-Cloudinary-migration Firebase Storage photo file. */
+  private async deleteLegacyPhotoFile(path: string): Promise<void> {
+    try {
+      await deleteObject(ref(firebaseStorage, path));
+    } catch (err) {
+      // Same tolerant handling as ExpenseService.deleteStorageFile — a missing/already
+      // deleted file must never block the Firestore update above.
+      console.warn('Could not delete legacy profile photo file', path, err);
+    }
   }
 
   /** Unchanged — still supports the original name-only seed for first-run/demo data. */

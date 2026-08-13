@@ -18,6 +18,17 @@ export interface Member {
   // UPI Settlement feature — also optional, same backwards-compat reasoning as above.
   /** e.g. "venkat@okhdfcbank". Set by the member themselves from Settings. */
   upiId?: string;
+
+  // Profile photo — optional, same backwards-compat reasoning as above. Missing/undefined
+  // MUST continue to render as the existing initials avatar everywhere it's read.
+  /** Display URL — Cloudinary `secure_url` for new uploads, or a legacy Firebase
+   *  Storage download URL for members who set a photo before the Cloudinary migration. */
+  photoUrl?: string;
+  /** LEGACY ONLY — Firebase Storage path, used only to delete pre-migration photos.
+   *  Never written by new uploads. */
+  photoPath?: string;
+  /** Cloudinary `public_id` for the photo — metadata only, see CloudinaryService. */
+  photoPublicId?: string;
   /** Only one member should have this true at a time — enforced by MemberService.setPaymentApprover(). */
   isPaymentApprover?: boolean;
 

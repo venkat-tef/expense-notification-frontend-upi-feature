@@ -38,6 +38,66 @@
 }
 .rm-upi-card__value--pending { color: var(--rm-primary); }
 
+// --- My Profile Photo — mirrors expense-dialog.scss's upload/hint styling exactly
+// (component styles don't leak across components, so these are duplicated locally,
+// same as the app's existing pattern of each dialog/tab owning its own small styles). ---
+
+.rm-photo-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.rm-photo-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rm-photo-card__upload--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.rm-expense-form__upload {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 8px 14px;
+  border: 1px dashed var(--rm-border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rm-primary-dark);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--rm-surface-alt);
+  }
+}
+
+.rm-expense-form__hint {
+  font-size: 11px;
+  color: var(--rm-text-muted);
+}
+
 // .rm-members-toolbar and .rm-add-member-btn now live in the global styles.scss patch
 // (see styles.append.scss) — shared with Announcements tab too.
 
@@ -78,6 +138,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .rm-member-card__info {
