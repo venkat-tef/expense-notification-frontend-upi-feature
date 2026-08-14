@@ -1,204 +1,494 @@
 <div class="rm-page rm-fade-in">
-<header class="rm-dash-header">
-  <div class="rm-dash-header__top">
-    <div class="rm-brand">
-      <img
-        [src]="logoSrc()"
-        alt="Nestly"
-        class="rm-brand__logo"
-      />
+
+  <!-- ============================================================
+       DASHBOARD HEADER
+       ============================================================ -->
+  <header class="rm-dash-header">
+
+    <!-- TOP ROW -->
+    <div class="rm-dash-header__top">
+
+      <div class="rm-brand">
+        <img
+          [src]="logoSrc()"
+          alt="Nestly"
+          class="rm-brand__logo"
+        />
+      </div>
+
+      <div class="rm-dash-header__actions">
+
+        <button
+          mat-icon-button
+          class="rm-dash-header__bell"
+          (click)="openNotifications()"
+          aria-label="Notifications"
+        >
+          <mat-icon>notifications</mat-icon>
+
+          @if (notificationService.unreadCount() > 0) {
+            <span class="rm-bell-dot">
+              {{ notificationService.unreadCount() }}
+            </span>
+          }
+        </button>
+
+        <button
+          mat-icon-button
+          class="rm-dash-header__logout"
+          (click)="logout()"
+          aria-label="Logout"
+          matTooltip="Logout"
+        >
+          <mat-icon>logout</mat-icon>
+        </button>
+
+      </div>
     </div>
 
-    <div class="rm-dash-header__actions">
-      <button
-        mat-icon-button
-        class="rm-dash-header__bell"
-        (click)="openNotifications()"
-        aria-label="Notifications"
-      >
-        <mat-icon>notifications</mat-icon>
-        @if (notificationService.unreadCount() > 0) {
-          <span class="rm-bell-dot">{{ notificationService.unreadCount() }}</span>
-        }
-      </button>
 
-      <button
-        mat-icon-button
-        class="rm-dash-header__logout"
-        (click)="logout()"
-        aria-label="Logout"
-        matTooltip="Logout"
-      >
-        <mat-icon>logout</mat-icon>
-      </button>
+    <!-- ============================================================
+         WELCOME HERO
+         Common background for all users.
+         Only avatar/GIF changes based on logged-in member.
+         ============================================================ -->
+    <section class="rm-welcome-hero">
+
+      <!-- LEFT CONTENT -->
+      <div class="rm-welcome-hero__content">
+
+        <h1 class="rm-welcome-hero__title">
+          Welcome back,
+        </h1>
+
+        <div class="rm-welcome-hero__name-row">
+          <span class="rm-welcome-hero__name">
+            {{ currentMemberName || 'there' }}!
+          </span>
+
+          <span
+            class="rm-welcome-hero__wave"
+            aria-hidden="true"
+          >
+            👋
+          </span>
+        </div>
+
+        <p class="rm-welcome-hero__greeting">
+          {{ greeting() }}!
+        </p>
+
+        <p class="rm-welcome-hero__sub">
+          Keep water and garbage duties fair, every day.
+        </p>
+
+   <div class="rm-welcome-hero__message">
+  <div class="rm-hero-motto">
+    <span class="rm-hero-motto__sparkles">✦ ✧</span>
+
+    <div class="rm-hero-motto__quote">
+      <span class="rm-hero-motto__line rm-hero-motto__line--blue">
+        Small steps,
+      </span>
+
+   <span class="rm-hero-motto__line rm-hero-motto__line--green">
+  <span class="rm-hero-motto__word">stronger</span>
+  <span class="rm-hero-motto__word">home.</span>
+</span>
+
+      <span class="rm-hero-motto__heart">♡</span>
     </div>
-  </div>
 
-  <div class="rm-dash-header__text">
-    <p class="rm-dash-header__hello">
-      {{ greeting() }}@if (currentMemberName) {, <span class="rm-dash-header__name">{{ currentMemberName }}</span>} <span class="rm-dash-header__wave" aria-hidden="true">👋</span>
-    </p>
-    <p class="rm-dash-header__sub">
-      Keep water and garbage duties fair, every day.
-    </p>
+    <span class="rm-hero-motto__sub">
+      TOGETHER, WE KEEP<br />
+      OUR HOME HAPPY.
+    </span>
+
+    <!-- <span class="rm-hero-motto__curve"></span> -->
   </div>
-</header>
-  <br/>
- 
+</div>
+
+      </div>
+
+
+      <!-- RIGHT VISUAL -->
+      <div class="rm-welcome-hero__visual">
+
+        <!-- COMMON BACKGROUND
+             Single flattened illustration (arch + sky + house +
+             module icons). Same for every user. -->
+  <img
+  class="rm-welcome-hero__bg"
+  [src]="heroBgSrc()"
+  alt=""
+  aria-hidden="true"
+  loading="eager"
+  decoding="async"
+/>
+
+
+        <!-- ============================================================
+             DYNAMIC USER GIF / AVATAR
+             Falls back to the default avatar artwork when the member
+             has no photoUrl set. No animation applied.
+             ============================================================ -->
+
+       @if (avatarUrl(); as avatar) {
+
+  <img
+    class="rm-welcome-hero__avatar"
+    [src]="avatar"
+    [alt]="avatarAlt()"
+    loading="eager"
+    decoding="async"
+  />
+
+} @else {
+
+  <img
+    class="rm-welcome-hero__avatar"
+    src="assets/avatar/avatar-hero-light.png"
+    alt=""
+    aria-hidden="true"
+    loading="eager"
+    decoding="async"
+  />
+
+}
+      </div>
+
+    </section>
+
+  </header>
+
+
+  <!-- ============================================================
+       DASHBOARD CARDS
+       ============================================================ -->
+
   <div class="rm-dash-grid">
+
     @for (card of cards; track card.path; let i = $index) {
+
       <button
-        class="rm-card rm-card--interactive rm-dash-card rm-pop"
-        [style.animation-delay.ms]="i * 60"
+        class="rm-card rm-card--interactive rm-dash-card"
         [style.--rm-card-color]="card.color"
         (click)="open(card.path)"
       >
+
         <span class="rm-dash-card__icon">
-          <mat-icon>{{ card.icon }}</mat-icon>
+          <mat-icon>
+            {{ card.icon }}
+          </mat-icon>
         </span>
-        <span class="rm-dash-card__title">{{ card.title }}</span>
-        <span class="rm-dash-card__subtitle">{{ card.subtitle }}</span>
 
-        @if (card.path === '/water' && waterDoneToday()) {
-          <span class="rm-success-chip rm-dash-card__chip"><mat-icon>check</mat-icon>Done today</span>
+        <span class="rm-dash-card__title">
+          {{ card.title }}
+        </span>
+
+        <span class="rm-dash-card__subtitle">
+          {{ card.subtitle }}
+        </span>
+
+
+        @if (
+          card.path === '/water'
+          && waterDoneToday()
+        ) {
+
+          <span class="rm-success-chip rm-dash-card__chip">
+            <mat-icon>check</mat-icon>
+            Done today
+          </span>
+
         }
-        @if (card.path === '/cooking' && cookingDoneToday()) {
-          <span class="rm-success-chip rm-dash-card__chip"><mat-icon>check</mat-icon>Done today</span>
+
+
+        @if (
+          card.path === '/cooking'
+          && cookingDoneToday()
+        ) {
+
+          <span class="rm-success-chip rm-dash-card__chip">
+            <mat-icon>check</mat-icon>
+            Done today
+          </span>
+
         }
+
       </button>
-    }
-  </div>
-  <br/>
 
-  <div class="rm-card rm-next-turn" [style.--rm-accent]="waterAccent">
-    <div class="rm-next-turn__label">
-      <mat-icon>arrow_forward</mat-icon>
-      Next Water Turn
-    </div>
-    @if (waterTurnMember; as next) {
-      <div class="rm-next-turn__row">
-        <div class="rm-next-turn__name">
-          {{ next.name }}
-          @if (waterWasReassignedToday()) {
-            <span class="rm-next-turn__reassigned-tag">reassigned</span>
-          }
-        </div>
-        @if (waterDoneToday()) {
-          <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
-        } @else {
-          <button class="rm-next-turn__skip" [disabled]="isSkippingWater()" (click)="skipWater()">
-            <mat-icon>skip_next</mat-icon> Skip
-          </button>
-        }
-      </div>
-    } @else {
-      <div class="rm-next-turn__name rm-next-turn__name--empty">Add roommates to start</div>
     }
+
   </div>
 
-  <div class="rm-card rm-next-turn" [style.--rm-accent]="cookingAccent">
-    <div class="rm-next-turn__label">
-      <mat-icon>arrow_forward</mat-icon>
-      Next Garbage Turn
-    </div>
-    @if (cookingTurnMember; as next) {
-      <div class="rm-next-turn__row">
-        <div class="rm-next-turn__name">
-          {{ next.name }}
-          @if (cookingWasReassignedToday()) {
-            <span class="rm-next-turn__reassigned-tag">reassigned</span>
-          }
-        </div>
-        @if (cookingDoneToday()) {
-          <span class="rm-success-chip"><mat-icon>check</mat-icon>Done today</span>
-        } @else {
-          <button class="rm-next-turn__skip" [disabled]="isSkippingCooking()" (click)="skipCooking()">
-            <mat-icon>skip_next</mat-icon> Skip
-          </button>
-        }
-      </div>
-    } @else {
-      <div class="rm-next-turn__name rm-next-turn__name--empty">Add roommates to start</div>
-    }
-  </div>
-
-  <!-- <p class="rm-section-title">Roommates</p>
-  <div class="rm-card rm-dash-members">
-    @for (m of memberService.members(); track m.id) {
-      <span class="rm-dash-members__chip">{{ m.name }}</span>
-    } @empty {
-      <span class="rm-dash-members__empty">No roommates yet — add some in Settings.</span>
-    }
-  </div> -->
 
   <!-- ============================================================
-       ADDITIVE — QUICK ACTIONS
-       Reuses the same open()/router.navigateByUrl already used above.
+       NEXT WATER TURN
        ============================================================ -->
-  <!-- <p class="rm-section-title">Quick Actions</p>
-  <div class="rm-quick-actions">
-    @for (action of quickActions; track action.path) {
+
+  <div
+    class="rm-card rm-next-turn"
+    [style.--rm-accent]="waterAccent"
+  >
+
+    <div class="rm-next-turn__icon">
+      <mat-icon>water_drop</mat-icon>
+    </div>
+
+    <div class="rm-next-turn__content">
+
+      <div class="rm-next-turn__label">
+        <mat-icon>arrow_forward</mat-icon>
+        Next Water Turn
+      </div>
+
+      @if (waterTurnMember; as next) {
+
+        <div class="rm-next-turn__row">
+
+          <div class="rm-next-turn__name">
+
+            {{ next.name }}
+
+            @if (waterWasReassignedToday()) {
+              <span class="rm-next-turn__reassigned-tag">
+                reassigned
+              </span>
+            }
+
+          </div>
+
+        </div>
+
+      } @else {
+
+        <div class="rm-next-turn__name rm-next-turn__name--empty">
+          Add roommates to start
+        </div>
+
+      }
+
+    </div>
+
+
+    @if (waterDoneToday()) {
+
+      <span class="rm-success-chip">
+        <mat-icon>check</mat-icon>
+        Done today
+      </span>
+
+    } @else {
+
       <button
-        class="rm-quick-action"
-        [style.--rm-qa-color]="action.color"
-        (click)="open(action.path)"
+        class="rm-next-turn__skip"
+        [disabled]="isSkippingWater()"
+        (click)="skipWater()"
       >
-        <span class="rm-quick-action__icon"><mat-icon>{{ action.icon }}</mat-icon></span>
-        <span class="rm-quick-action__label">{{ action.label }}</span>
+        <mat-icon>skip_next</mat-icon>
+        Skip
       </button>
+
     }
-  </div> -->
+
+  </div>
+
 
   <!-- ============================================================
-       ADDITIVE — THIS MONTH EXPENSE SUMMARY
-       Numbers are derived (mirrored) from the same Expense/MonthlySummary
-       services the Expenses screen already uses — nothing new is written.
+       NEXT GARBAGE TURN
        ============================================================ -->
-  @if (hasExpenseData()) {
-    <p class="rm-section-title">This Month</p>
-    <div class="rm-card rm-expense-summary">
-      <div class="rm-expense-summary__total">
-        <span class="rm-expense-summary__amount">₹{{ monthExpenseTotal() | number: '1.0-0' }}</span>
-        <span class="rm-expense-summary__label">Total Expenses</span>
+
+  <div
+    class="rm-card rm-next-turn"
+    [style.--rm-accent]="cookingAccent"
+  >
+
+    <div class="rm-next-turn__icon">
+      <mat-icon>delete</mat-icon>
+    </div>
+
+    <div class="rm-next-turn__content">
+
+      <div class="rm-next-turn__label">
+        <mat-icon>arrow_forward</mat-icon>
+        Next Garbage Turn
       </div>
+
+      @if (cookingTurnMember; as next) {
+
+        <div class="rm-next-turn__row">
+
+          <div class="rm-next-turn__name">
+
+            {{ next.name }}
+
+            @if (cookingWasReassignedToday()) {
+
+              <span class="rm-next-turn__reassigned-tag">
+                reassigned
+              </span>
+
+            }
+
+          </div>
+
+        </div>
+
+      } @else {
+
+        <div class="rm-next-turn__name rm-next-turn__name--empty">
+          Add roommates to start
+        </div>
+
+      }
+
+    </div>
+
+
+    @if (cookingDoneToday()) {
+
+      <span class="rm-success-chip">
+        <mat-icon>check</mat-icon>
+        Done today
+      </span>
+
+    } @else {
+
+      <button
+        class="rm-next-turn__skip"
+        [disabled]="isSkippingCooking()"
+        (click)="skipCooking()"
+      >
+        <mat-icon>skip_next</mat-icon>
+        Skip
+      </button>
+
+    }
+
+  </div>
+
+
+  <!-- EXISTING EXPENSE SUMMARY -->
+
+  @if (hasExpenseData()) {
+
+    <p class="rm-section-title">
+      This Month
+    </p>
+
+    <div class="rm-card rm-expense-summary">
+
+      <div class="rm-expense-summary__total">
+
+        <span class="rm-expense-summary__amount">
+          ₹{{ monthExpenseTotal() | number: '1.0-0' }}
+        </span>
+
+        <span class="rm-expense-summary__label">
+          Total Expenses
+        </span>
+
+      </div>
+
+
       <div class="rm-expense-summary__split">
+
         <div class="rm-expense-summary__split-item">
-          <span class="rm-expense-summary__split-label">You Spent</span>
-          <span class="rm-expense-summary__split-value rm-expense-summary__split-value--spent">
+
+          <span class="rm-expense-summary__split-label">
+            You Spent
+          </span>
+
+          <span
+            class="rm-expense-summary__split-value
+                   rm-expense-summary__split-value--spent"
+          >
             ₹{{ youSpent() | number: '1.0-0' }}
           </span>
+
         </div>
+
+
         <div class="rm-expense-summary__divider"></div>
+
+
         <div class="rm-expense-summary__split-item">
-          <span class="rm-expense-summary__split-label">You Get</span>
-          <span class="rm-expense-summary__split-value rm-expense-summary__split-value--get">
+
+          <span class="rm-expense-summary__split-label">
+            You Get
+          </span>
+
+          <span
+            class="rm-expense-summary__split-value
+                   rm-expense-summary__split-value--get"
+          >
             ₹{{ youGet() | number: '1.0-0' }}
           </span>
+
         </div>
+
       </div>
-      <button class="rm-expense-summary__cta" (click)="open('/expenses')">
-        View details <mat-icon>arrow_forward</mat-icon>
+
+
+      <button
+        class="rm-expense-summary__cta"
+        (click)="open('/expenses')"
+      >
+        View details
+        <mat-icon>arrow_forward</mat-icon>
       </button>
+
     </div>
+
   }
 
-  <!-- ============================================================
-       ADDITIVE — RECENT ACTIVITY
-       Reuses NotificationService.notifications() (same feed as the bell).
-       ============================================================ -->
+
+  <!-- EXISTING RECENT ACTIVITY -->
+
   @if (recentActivity().length > 0) {
-    <p class="rm-section-title">Recent Activity</p>
+
+    <p class="rm-section-title">
+      Recent Activity
+    </p>
+
     <div class="rm-card rm-activity-list">
-      @for (item of recentActivity(); track item.id) {
+
+      @for (
+        item of recentActivity();
+        track item.id
+      ) {
+
         <div class="rm-activity-item">
-          <span class="rm-activity-item__icon"><mat-icon>{{ activityIcon(item.type) }}</mat-icon></span>
+
+          <span class="rm-activity-item__icon">
+            <mat-icon>
+              {{ activityIcon(item.type) }}
+            </mat-icon>
+          </span>
+
           <div class="rm-activity-item__text">
-            <span class="rm-activity-item__title">{{ item.title }}</span>
-            <span class="rm-activity-item__body">{{ item.body }}</span>
+
+            <span class="rm-activity-item__title">
+              {{ item.title }}
+            </span>
+
+            <span class="rm-activity-item__body">
+              {{ item.body }}
+            </span>
+
           </div>
-          <span class="rm-activity-item__time">{{ timeAgo(item.createdAt) }}</span>
+
+          <span class="rm-activity-item__time">
+            {{ timeAgo(item.createdAt) }}
+          </span>
+
         </div>
+
       }
+
     </div>
+
   }
+
 </div>

@@ -162,6 +162,30 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   };
 
+  readonly heroBgSrc = computed(() =>
+  this.themeService.activeThemeId() === 'midnight'
+    ? 'assets/dashboard-hero-bg-dark.png'
+    : 'assets/dashboard-hero-bg.png'
+);
+
+private readonly NAMED_AVATARS: Record<string, string> = {
+  venki: 'assets/avatars/venki.png',
+  madan: 'assets/avatars/madan.png',
+  narendra: 'assets/avatars/narendra.png',
+  jagan: 'assets/avatars/jagan.png',
+};
+
+readonly avatarUrl = computed(() => {
+  const member = this.memberService.currentMember();
+  const key = member?.name?.trim().toLowerCase();
+  return key ? this.NAMED_AVATARS[key] : undefined;
+});
+
+readonly avatarAlt = computed(() => {
+  const name = this.memberService.currentMember()?.name ?? this.currentMemberName;
+  return name ? `Welcome illustration for ${name}` : 'Welcome illustration';
+});
+
   ngOnInit(): void {
     document.addEventListener('visibilitychange', this.onVisibilityChange);
     window.addEventListener('pageshow', this.onResumeSignal);
@@ -275,6 +299,26 @@ logoSrc(): string {
     const member = this.memberService.members().find((m) => m.uid === uid);
     return member?.name ?? null;
   }
+
+  // ============================================================
+  // ADDITIVE — PERSONALIZED WELCOME CARTOON
+  // ============================================================
+  //
+  // Reuses the SAME Member.photoUrl field and MemberService.currentMember()
+  // signal already powering profile photos elsewhere in the app (Settings,
+  // member list, Cloudinary uploads) — no new user-photo mechanism, no new
+  // Firestore read, no hardcoded user/image. Because photoUrl lives per
+  // Member document, whichever member is signed in automatically gets their
+  // own cartoon; nothing here branches on role or identity explicitly.
+  //
+  // If the member has no photo set yet, this returns undefined and the
+  // template's `@if` hides the image entirely — never a broken <img>.
+  // readonly avatarUrl = computed(() => this.memberService.currentMember()?.photoUrl);
+
+  // readonly avatarAlt = computed(() => {
+  //   const name = this.memberService.currentMember()?.name ?? this.currentMemberName;
+  //   return name ? `Welcome illustration for ${name}` : 'Welcome illustration';
+  // });
 
   isSkippingWater(): boolean {
     return this.skippingWater();
