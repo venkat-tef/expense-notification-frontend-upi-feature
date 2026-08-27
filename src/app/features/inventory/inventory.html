@@ -1,0 +1,114 @@
+<div class="rm-page rm-fade-in rm-inventory">
+  <header class="rm-mod-header">
+    <div class="rm-mod-header__left">
+      <span class="rm-mod-header__icon rm-mod-header__icon--themed">
+        <mat-icon>kitchen</mat-icon>
+      </span>
+
+      <div>
+        <h1>Inventory</h1>
+        <p>Fridge & kitchen stock, at a glance.</p>
+      </div>
+    </div>
+
+    <button class="rm-add-btn" (click)="openAddItem()" aria-label="Add item">
+      <mat-icon>add</mat-icon>
+    </button>
+  </header>
+
+  <nav class="rm-tab-bar" role="tablist">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        role="tab"
+        class="rm-tab-btn"
+        [class.rm-tab-btn--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="selectTab(tab.id)"
+      >
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="rm-tab-panel">
+    @if (!visibleItems().length) {
+      <div class="rm-card rm-empty-state">
+        <mat-icon>inventory_2</mat-icon>
+        <p>No {{ categoryLabel[activeTab()] }} items yet.</p>
+        <p class="rm-empty-state__sub">Tap the + button to add the first one.</p>
+      </div>
+    } @else {
+      <div class="rm-inventory-list">
+        @for (item of visibleItems(); track item.id) {
+          <div class="rm-card rm-inventory-card">
+            <div class="rm-inventory-card__top">
+              <span class="rm-inventory-card__name">{{ item.name }}</span>
+
+              <span
+                class="rm-status-chip"
+                [class.rm-status-chip--available]="item.status === 'available'"
+                [class.rm-status-chip--low]="item.status === 'low'"
+                [class.rm-status-chip--out]="item.status === 'out'"
+              >
+                <mat-icon>{{ statusIcon[item.status] }}</mat-icon>
+                {{ statusLabel[item.status] }}
+              </span>
+            </div>
+
+            @if (quantityLabel(item); as qty) {
+              <div class="rm-inventory-card__meta">{{ qty }}</div>
+            }
+
+            @if (item.expiryDate) {
+              <div class="rm-inventory-card__meta">Expires {{ item.expiryDate }}</div>
+            }
+
+            @if (item.updatedByName) {
+              <div class="rm-inventory-card__meta rm-inventory-card__meta--muted">
+                Last updated by {{ item.updatedByName }}
+              </div>
+            }
+
+            <div class="rm-inventory-card__actions">
+              <button
+                class="rm-inventory-quick-btn rm-inventory-quick-btn--available"
+                type="button"
+                (click)="setStatus(item, 'available')"
+                aria-label="Mark available"
+              >
+                ✅
+              </button>
+              <button
+                class="rm-inventory-quick-btn rm-inventory-quick-btn--low"
+                type="button"
+                (click)="setStatus(item, 'low')"
+                aria-label="Mark low"
+              >
+                ⚠️
+              </button>
+              <button
+                class="rm-inventory-quick-btn rm-inventory-quick-btn--out"
+                type="button"
+                (click)="setStatus(item, 'out')"
+                aria-label="Mark out"
+              >
+                ❌
+              </button>
+
+              <span class="rm-inventory-card__spacer"></span>
+
+              <button mat-icon-button (click)="openEditItem(item)" aria-label="Edit item">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteItem(item)" aria-label="Delete item">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

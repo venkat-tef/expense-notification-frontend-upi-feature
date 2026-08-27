@@ -22,6 +22,7 @@ export class BottomNav {
     { path: '/cooking', label: 'Garbage', icon: 'delete' },
      { path: '/history', label: 'History', icon: 'history' },
     { path: '/expenses', label: 'Expenses', icon: 'payments' },
-    { path: '/settings', label: 'Settings', icon: 'settings' },
+    { path: '/inventory', label: 'Inventory', icon: 'kitchen' },
+    { path: '/settings', label: 'Settings', icon: 'settings' }
   ];
 }

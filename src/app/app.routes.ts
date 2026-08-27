@@ -46,5 +46,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     title: 'Settings • RoomMate Manager',
   },
-  { path: '**', redirectTo: 'dashboard' },
+
+    {
+    path: 'inventory',
+    loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
+    canActivate: [authGuard],
+    title: 'Inventory • RoomMate Manager',
+  },
+  { path: '**', redirectTo: 'dashboard' }
 ];

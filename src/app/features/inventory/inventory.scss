@@ -1,0 +1,545 @@
+
+
+/* =================================
+   INVENTORY PAGE
+   ================================= */
+
+.rm-inventory {
+  padding-bottom: 96px;
+}
+
+
+/* =================================
+   HEADER
+   ================================= */
+
+.rm-mod-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rm-mod-header__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rm-mod-header__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.rm-mod-header__icon--themed {
+  background: color-mix(
+    in srgb,
+    var(--rm-primary) 14%,
+    transparent
+  );
+
+  color: var(--rm-primary);
+}
+
+.rm-mod-header h1 {
+  margin: 0;
+  color: var(--rm-text);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.rm-mod-header p {
+  margin: 5px 0 0;
+  color: var(--rm-text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+
+/* =================================
+   ADD BUTTON
+   ================================= */
+
+.rm-add-btn {
+  width: 44px;
+  height: 44px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: var(--rm-primary);
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  flex-shrink: 0;
+
+  box-shadow: 0 6px 16px
+    color-mix(in srgb, var(--rm-primary) 28%, transparent);
+
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  &:hover {
+    background: var(--rm-primary-dark);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+
+/* =================================
+   FRIDGE / KITCHEN TABS
+   ================================= */
+
+.rm-tab-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+
+  padding: 5px;
+
+  margin-bottom: 16px;
+
+  border-radius: 14px;
+
+  background: var(--rm-surface-alt);
+  border: 1px solid var(--rm-border);
+}
+
+.rm-tab-btn {
+  min-height: 46px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: transparent;
+  color: var(--rm-text-muted);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+
+  &:hover:not(.rm-tab-btn--active) {
+    background: color-mix(
+      in srgb,
+      var(--rm-primary) 7%,
+      transparent
+    );
+  }
+}
+
+.rm-tab-btn--active {
+  background: var(--rm-primary);
+  color: #fff;
+
+  box-shadow:
+    0 4px 12px
+    color-mix(in srgb, var(--rm-primary) 25%, transparent);
+}
+
+
+/* =================================
+   TAB CONTENT
+   ================================= */
+
+.rm-tab-panel {
+  min-width: 0;
+}
+
+
+/* =================================
+   EMPTY STATE
+   ================================= */
+
+.rm-inventory .rm-empty-state {
+  min-height: 180px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 28px 20px;
+}
+
+.rm-inventory .rm-empty-state mat-icon {
+  width: 42px;
+  height: 42px;
+
+  font-size: 42px;
+
+  color: var(--rm-primary);
+
+  opacity: 0.8;
+
+  margin-bottom: 12px;
+}
+
+.rm-inventory .rm-empty-state p {
+  margin: 0;
+
+  color: var(--rm-text);
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.rm-empty-state__sub {
+  margin-top: 6px !important;
+
+  color: var(--rm-text-muted) !important;
+
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
+
+
+/* =================================
+   INVENTORY LIST
+   ================================= */
+
+.rm-inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rm-inventory-card {
+  padding: 14px 16px;
+
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.rm-inventory-card:hover {
+  box-shadow: var(--rm-shadow-hover);
+}
+
+.rm-inventory-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rm-inventory-card__name {
+  min-width: 0;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: var(--rm-text);
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rm-inventory-card__meta {
+  margin-top: 5px;
+
+  font-size: 12.5px;
+
+  color: var(--rm-text-muted);
+}
+
+.rm-inventory-card__meta--muted {
+  margin-top: 7px;
+  opacity: 0.75;
+}
+
+
+/* =================================
+   STATUS CHIP
+   ================================= */
+
+.rm-inventory .rm-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  flex-shrink: 0;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.rm-inventory .rm-status-chip--available {
+  background: var(--rm-success-bg);
+  color: var(--rm-success);
+}
+
+.rm-inventory .rm-status-chip--low {
+  background: #fff4e5;
+  color: #b06a00;
+}
+
+.rm-inventory .rm-status-chip--out {
+  background: #fdecea;
+  color: #c62828;
+}
+
+
+/* =================================
+   QUICK ACTIONS
+   ================================= */
+
+.rm-inventory-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  margin-top: 12px;
+
+  padding-top: 10px;
+
+  border-top: 1px solid var(--rm-border);
+}
+
+.rm-inventory-card__spacer {
+  flex: 1;
+}
+
+.rm-inventory-quick-btn {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 10px;
+
+  border: 1px solid var(--rm-border);
+
+  background: var(--rm-surface);
+
+  font-size: 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    transform 120ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: var(--rm-surface-alt);
+    border-color: color-mix(
+      in srgb,
+      var(--rm-primary) 30%,
+      var(--rm-border)
+    );
+  }
+
+  &:active {
+    transform: scale(0.93);
+  }
+}
+
+
+/* =================================
+   MOBILE
+   ================================= */
+
+@media (max-width: 480px) {
+  .rm-mod-header h1 {
+    font-size: 26px;
+  }
+
+  .rm-mod-header__icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .rm-add-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .rm-tab-btn {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .rm-inventory-card {
+    padding: 13px 14px;
+  }
+}
+
+/* ================================
+   LIST
+   ================================ */
+
+.rm-inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rm-inventory-card {
+  padding: 14px 16px;
+}
+
+.rm-inventory-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rm-inventory-card__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rm-text);
+}
+
+.rm-inventory-card__meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--rm-text-muted);
+}
+
+.rm-inventory-card__meta--muted {
+  opacity: 0.8;
+}
+
+.rm-inventory-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rm-inventory-card__spacer {
+  flex: 1;
+}
+
+/* ================================
+   STATUS CHIP
+   Reuses the same color language already used for UPI settlement statuses
+   (rm-settlement-card__status--owe/--receive/--confirm in expenses.scss):
+   green = good, amber = caution, red = bad. Not a new palette.
+   ================================ */
+
+.rm-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  padding: 3px 9px;
+  border-radius: 999px;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  &--available {
+    background: var(--rm-success-bg);
+    color: var(--rm-success);
+  }
+
+  &--low {
+    background: #fff4e5;
+    color: #b06a00;
+  }
+
+  &--out {
+    background: #fdecea;
+    color: #c62828;
+  }
+}
+
+/* ================================
+   QUICK STATUS BUTTONS
+   ================================ */
+
+.rm-inventory-quick-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--rm-border);
+  background: var(--rm-surface);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, transform 120ms ease;
+
+  &:hover {
+    background: var(--rm-surface-alt);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
