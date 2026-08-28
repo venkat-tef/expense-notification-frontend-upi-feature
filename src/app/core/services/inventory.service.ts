@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+
 import {
   addDoc,
   collection,
@@ -12,18 +13,28 @@ import {
 } from 'firebase/firestore';
 
 import { firestoreDb } from './firebase';
+
 import {
   InventoryCategory,
   InventoryItem,
   InventoryStatus,
   InventoryUnit,
 } from '../models/inventory.model';
+
 import { AuthService } from './auth.service';
 import { MemberService } from './member.service';
 
-// New, dedicated collection — additive only. Does not touch expenses, water_records,
-// cooking_records, members, or any other existing collection.
+
+// ============================================================
+// COLLECTION
+// ============================================================
+
 const COLLECTION = 'inventory_items';
+
+
+// ============================================================
+// INPUT
+// ============================================================
 
 export interface InventoryItemInput {
   name: string;
@@ -34,129 +45,490 @@ export interface InventoryItemInput {
   expiryDate?: string;
 }
 
-@Injectable({ providedIn: 'root' })
+
+// ============================================================
+// SERVICE
+// ============================================================
+
+@Injectable({
+  providedIn: 'root',
+})
 export class InventoryService {
+
+  // ==========================================================
+  // STATE
+  // ==========================================================
+
   readonly items = signal<InventoryItem[]>([]);
   readonly loaded = signal(false);
 
+
+  // ==========================================================
+  // DUPLICATE REQUEST PROTECTION
+  //
+  // Prevents:
+  // - double click
+  // - dialog firing twice
+  // - voice command firing twice
+  // - multiple rapid requests
+  // ==========================================================
+
+  private readonly addingItems = new Set<string>();
+
+
+  // ==========================================================
+  // DEPENDENCIES
+  // ==========================================================
+
   private readonly auth = inject(AuthService);
   private readonly memberService = inject(MemberService);
+
+
+  // ==========================================================
+  // CONSTRUCTOR
+  // ==========================================================
 
   constructor() {
     this.listen();
   }
 
+
+  // ==========================================================
+  // REALTIME FIRESTORE LISTENER
+  // ==========================================================
+
   private listen(): void {
-    const q = query(collection(firestoreDb, COLLECTION), orderBy('name', 'asc'));
+
+    const q = query(
+      collection(firestoreDb, COLLECTION),
+      orderBy('name', 'asc')
+    );
+
 
     onSnapshot(
       q,
+
       (snap) => {
+
         const list: InventoryItem[] = snap.docs.map((d) => {
+
           const data = d.data() as any;
 
           return {
             id: d.id,
+
             name: data['name'],
+
             category: data['category'],
+
             status: data['status'],
-            quantity: data['quantity'] ?? undefined,
-            unit: data['unit'] ?? undefined,
-            expiryDate: data['expiryDate'] ?? undefined,
-            createdAt: data['createdAt']?.toMillis?.() ?? Date.now(),
-            updatedAt: data['updatedAt']?.toMillis?.() ?? Date.now(),
-            updatedByUid: data['updatedByUid'] ?? undefined,
-            updatedByName: data['updatedByName'] ?? undefined,
+
+            quantity:
+              data['quantity'] ?? undefined,
+
+            unit:
+              data['unit'] ?? undefined,
+
+            expiryDate:
+              data['expiryDate'] ?? undefined,
+
+            createdAt:
+              data['createdAt']?.toMillis?.() ?? Date.now(),
+
+            updatedAt:
+              data['updatedAt']?.toMillis?.() ?? Date.now(),
+
+            updatedByUid:
+              data['updatedByUid'] ?? undefined,
+
+            updatedByName:
+              data['updatedByName'] ?? undefined,
           };
         });
 
+
+        // Update Angular signal
         this.items.set(list);
+
         this.loaded.set(true);
       },
+
+
       (err) => {
-        console.error('inventory_items onSnapshot error', err);
+
+        console.error(
+          'inventory_items onSnapshot error',
+          err
+        );
+
         this.loaded.set(true);
       }
     );
   }
 
-  forCategory(category: InventoryCategory): InventoryItem[] {
-    return this.items().filter((i) => i.category === category);
+
+  // ==========================================================
+  // GET ITEMS BY CATEGORY
+  // ==========================================================
+
+  forCategory(
+    category: InventoryCategory
+  ): InventoryItem[] {
+
+    return this.items().filter(
+      (item) => item.category === category
+    );
   }
 
-  /** Best-effort "who did this" stamp — same optional pattern used for
-   *  Expense's createdByUid/updatedByUid; never blocks a write if unavailable. */
-  private currentUserStamp(): { uid?: string; name?: string } {
+
+  // ==========================================================
+  // CURRENT USER STAMP
+  // ==========================================================
+
+  private currentUserStamp(): {
+    uid?: string;
+    name?: string;
+  } {
+
     return {
-      uid: this.auth.user()?.uid ?? undefined,
-      name: this.memberService.currentMember()?.name ?? undefined,
+
+      uid:
+        this.auth.user()?.uid ?? undefined,
+
+      name:
+        this.memberService.currentMember()?.name ?? undefined,
     };
   }
 
-  // ============================================================
+
+  // ==========================================================
+  // CREATE NORMALIZED KEY
+  //
+  // Used for duplicate detection.
+  //
+  // Example:
+  //
+  // Milk + fridge
+  // -> fridge:milk
+  // ==========================================================
+
+  private getItemKey(
+    name: string,
+    category: InventoryCategory
+  ): string {
+
+    const normalizedName = name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+
+    return `${category}:${normalizedName}`;
+  }
+
+
+  // ==========================================================
   // ADD ITEM
-  // ============================================================
+  //
+  // Returns:
+  //
+  // true  = item was added
+  // false = duplicate / request prevented
+  // ==========================================================
 
-  async addItem(input: InventoryItemInput): Promise<void> {
-    const { uid, name } = this.currentUserStamp();
+  async addItem(
+    input: InventoryItemInput
+  ): Promise<boolean> {
 
-    const data: Record<string, unknown> = {
-      name: input.name.trim(),
-      category: input.category,
-      status: input.status,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    const itemName = input.name.trim();
 
-    if (input.quantity != null) data['quantity'] = input.quantity;
-    if (input.unit) data['unit'] = input.unit;
-    if (input.expiryDate) data['expiryDate'] = input.expiryDate;
-    if (uid) data['updatedByUid'] = uid;
-    if (name) data['updatedByName'] = name;
 
-    await addDoc(collection(firestoreDb, COLLECTION), data);
+    // --------------------------------------------------------
+    // VALIDATION
+    // --------------------------------------------------------
+
+    if (!itemName) {
+
+      throw new Error(
+        'Item name is required.'
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // CREATE UNIQUE REQUEST KEY
+    // --------------------------------------------------------
+
+    const itemKey = this.getItemKey(
+      itemName,
+      input.category
+    );
+
+
+    // --------------------------------------------------------
+    // PREVENT RAPID DOUBLE REQUESTS
+    // --------------------------------------------------------
+
+    if (this.addingItems.has(itemKey)) {
+
+      console.warn(
+        'Duplicate add request prevented:',
+        itemKey
+      );
+
+      return false;
+    }
+
+
+    // Lock this item while adding
+    this.addingItems.add(itemKey);
+
+
+    try {
+
+      // ------------------------------------------------------
+      // CHECK EXISTING INVENTORY
+      //
+      // Same name + same category = duplicate
+      //
+      // Milk in Fridge != Milk in Kitchen
+      // ------------------------------------------------------
+
+      const existingItem = this.items().find(
+        (item) => {
+
+          return (
+            this.getItemKey(
+              item.name,
+              item.category
+            ) === itemKey
+          );
+        }
+      );
+
+
+      if (existingItem) {
+
+        console.warn(
+          'Item already exists:',
+          itemKey
+        );
+
+        return false;
+      }
+
+
+      // ------------------------------------------------------
+      // USER INFORMATION
+      // ------------------------------------------------------
+
+      const {
+        uid,
+        name,
+      } = this.currentUserStamp();
+
+
+      // ------------------------------------------------------
+      // FIRESTORE DATA
+      // ------------------------------------------------------
+
+      const data: Record<string, unknown> = {
+
+        name: itemName,
+
+        category: input.category,
+
+        status: input.status,
+
+        createdAt: serverTimestamp(),
+
+        updatedAt: serverTimestamp(),
+      };
+
+
+      // ------------------------------------------------------
+      // OPTIONAL FIELDS
+      // ------------------------------------------------------
+
+      if (input.quantity != null) {
+
+        data['quantity'] =
+          input.quantity;
+      }
+
+
+      if (input.unit) {
+
+        data['unit'] =
+          input.unit;
+      }
+
+
+      if (input.expiryDate) {
+
+        data['expiryDate'] =
+          input.expiryDate;
+      }
+
+
+      if (uid) {
+
+        data['updatedByUid'] =
+          uid;
+      }
+
+
+      if (name) {
+
+        data['updatedByName'] =
+          name;
+      }
+
+
+      // ------------------------------------------------------
+      // ADD TO FIRESTORE
+      // ------------------------------------------------------
+
+      await addDoc(
+        collection(
+          firestoreDb,
+          COLLECTION
+        ),
+        data
+      );
+
+
+      console.log(
+        'Inventory item added:',
+        itemName
+      );
+
+
+      return true;
+
+    } finally {
+
+      // ------------------------------------------------------
+      // ALWAYS RELEASE LOCK
+      // ------------------------------------------------------
+
+      this.addingItems.delete(itemKey);
+    }
   }
 
-  // ============================================================
-  // UPDATE ITEM (full edit — name/category/quantity/unit/expiry/status)
-  // ============================================================
 
-  async updateItem(id: string, input: InventoryItemInput): Promise<void> {
-    const { uid, name } = this.currentUserStamp();
+  // ==========================================================
+  // UPDATE ITEM
+  //
+  // Full edit:
+  // name/category/quantity/unit/expiry/status
+  // ==========================================================
 
-    await updateDoc(doc(firestoreDb, COLLECTION, id), {
-      name: input.name.trim(),
-      category: input.category,
-      status: input.status,
-      quantity: input.quantity ?? null,
-      unit: input.unit ?? null,
-      expiryDate: input.expiryDate ?? null,
-      updatedByUid: uid ?? null,
-      updatedByName: name ?? null,
-      updatedAt: serverTimestamp(),
-    });
+  async updateItem(
+    id: string,
+    input: InventoryItemInput
+  ): Promise<void> {
+
+    const {
+      uid,
+      name,
+    } = this.currentUserStamp();
+
+
+    await updateDoc(
+      doc(
+        firestoreDb,
+        COLLECTION,
+        id
+      ),
+
+      {
+
+        name:
+          input.name.trim(),
+
+        category:
+          input.category,
+
+        status:
+          input.status,
+
+        quantity:
+          input.quantity ?? null,
+
+        unit:
+          input.unit ?? null,
+
+        expiryDate:
+          input.expiryDate ?? null,
+
+        updatedByUid:
+          uid ?? null,
+
+        updatedByName:
+          name ?? null,
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
   }
 
-  // ============================================================
-  // QUICK STATUS UPDATE (mark Available / Low / Out without opening the full form)
-  // ============================================================
 
-  async updateStatus(item: InventoryItem, status: InventoryStatus): Promise<void> {
-    const { uid, name } = this.currentUserStamp();
+  // ==========================================================
+  // QUICK STATUS UPDATE
+  // ==========================================================
 
-    await updateDoc(doc(firestoreDb, COLLECTION, item.id), {
-      status,
-      updatedByUid: uid ?? null,
-      updatedByName: name ?? null,
-      updatedAt: serverTimestamp(),
-    });
+  async updateStatus(
+    item: InventoryItem,
+    status: InventoryStatus
+  ): Promise<void> {
+
+    const {
+      uid,
+      name,
+    } = this.currentUserStamp();
+
+
+    await updateDoc(
+
+      doc(
+        firestoreDb,
+        COLLECTION,
+        item.id
+      ),
+
+      {
+
+        status,
+
+        updatedByUid:
+          uid ?? null,
+
+        updatedByName:
+          name ?? null,
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
   }
 
-  // ============================================================
+
+  // ==========================================================
   // DELETE ITEM
-  // ============================================================
+  // ==========================================================
 
-  async deleteItem(item: InventoryItem): Promise<void> {
-    await deleteDoc(doc(firestoreDb, COLLECTION, item.id));
+  async deleteItem(
+    item: InventoryItem
+  ): Promise<void> {
+
+    await deleteDoc(
+
+      doc(
+        firestoreDb,
+        COLLECTION,
+        item.id
+      )
+    );
   }
 }

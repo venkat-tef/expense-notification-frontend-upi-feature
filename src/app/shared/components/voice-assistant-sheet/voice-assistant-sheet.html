@@ -1,0 +1,207 @@
+<div class="rm-voice-sheet">
+
+  <!-- HEADER -->
+  <div class="rm-voice-sheet__header">
+    <h3>🎙️ Hey Nestly</h3>
+
+    <button
+      mat-icon-button
+      (click)="close()"
+      aria-label="Close"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+
+  <div class="rm-voice-sheet__body">
+
+    <!-- ===================================================== -->
+    <!-- IDLE -->
+    <!-- ===================================================== -->
+
+    @if (state() === 'idle') {
+
+      <button
+        class="rm-voice-sheet__mic rm-voice-sheet__mic--idle"
+        (click)="startListening()"
+        [disabled]="!supported()"
+        aria-label="Tap to speak"
+      >
+        <mat-icon>mic</mat-icon>
+      </button>
+
+      <p class="rm-voice-sheet__hint">
+        Tap to speak
+      </p>
+
+      <p class="rm-voice-sheet__examples">
+        Speak in English or Telugu-English (Tenglish)
+      </p>
+
+      <p class="rm-voice-sheet__examples">
+        Try “What's in the kitchen?”, “Kitchen lo em unnayi?”,
+        “Mirchi unda?”, or “Open expenses”.
+      </p>
+
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- LISTENING -->
+    <!-- ===================================================== -->
+
+    @if (state() === 'listening') {
+
+      <button
+        class="rm-voice-sheet__mic rm-voice-sheet__mic--listening"
+        (click)="cancelListening()"
+        aria-label="Stop listening"
+      >
+        <mat-icon>mic</mat-icon>
+
+        <span class="rm-voice-sheet__pulse"></span>
+      </button>
+
+      <p class="rm-voice-sheet__hint">
+        Listening…
+      </p>
+
+      <p class="rm-voice-sheet__examples">
+        Speak your Nestly command. Tap the mic to cancel.
+      </p>
+
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- PROCESSING -->
+    <!-- ===================================================== -->
+
+    @if (state() === 'processing') {
+
+      <div class="rm-voice-sheet__mic rm-voice-sheet__mic--processing">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+
+      <p class="rm-voice-sheet__hint">
+        ✨ Understanding your command…
+      </p>
+
+      @if (heardText()) {
+        <p class="rm-voice-sheet__heard">
+          “{{ heardText() }}”
+        </p>
+      }
+
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- RESULT -->
+    <!-- ===================================================== -->
+
+    @if (state() === 'result') {
+
+      <!-- CONFIRMATION -->
+      @if (pendingCommand()) {
+
+        <mat-icon
+          class="rm-voice-sheet__result-icon rm-voice-sheet__result-icon--confirm"
+        >
+          help
+        </mat-icon>
+
+        <p class="rm-voice-sheet__result">
+          {{ confirmPrompt() }}
+        </p>
+
+        <div class="rm-voice-sheet__actions">
+
+          <button
+            mat-stroked-button
+            (click)="declinePendingCommand()"
+          >
+            No
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="confirmPendingCommand()"
+          >
+            Yes
+          </button>
+
+        </div>
+
+      }
+
+      <!-- NORMAL RESULT -->
+      @else {
+
+        <mat-icon class="rm-voice-sheet__result-icon">
+          check_circle
+        </mat-icon>
+
+        <p class="rm-voice-sheet__result">
+          {{ resultMessage() }}
+        </p>
+
+        <div class="rm-voice-sheet__actions">
+
+          <button
+            mat-stroked-button
+            (click)="tryAgain()"
+          >
+            Ask something else
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="close()"
+          >
+            Done
+          </button>
+
+        </div>
+
+      }
+
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- ERROR -->
+    <!-- ===================================================== -->
+
+    @if (state() === 'error') {
+
+      <mat-icon
+        class="rm-voice-sheet__result-icon rm-voice-sheet__result-icon--error"
+      >
+        error_outline
+      </mat-icon>
+
+      <p class="rm-voice-sheet__result">
+        {{ resultMessage() }}
+      </p>
+
+      <div class="rm-voice-sheet__actions">
+
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="tryAgain()"
+        >
+          Try again
+        </button>
+
+      </div>
+
+    }
+
+  </div>
+
+</div>

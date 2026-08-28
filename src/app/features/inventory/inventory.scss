@@ -1,17 +1,15 @@
-
-
-/* =================================
+/* =========================================
    INVENTORY PAGE
-   ================================= */
+========================================= */
 
 .rm-inventory {
   padding-bottom: 96px;
 }
 
 
-/* =================================
+/* =========================================
    HEADER
-   ================================= */
+========================================= */
 
 .rm-mod-header {
   display: flex;
@@ -59,487 +57,585 @@
 .rm-mod-header h1 {
   margin: 0;
   color: var(--rm-text);
+
   font-size: 28px;
   font-weight: 800;
   line-height: 1.15;
-  letter-spacing: -0.02em;
 }
 
 .rm-mod-header p {
   margin: 5px 0 0;
+
   color: var(--rm-text-muted);
+
   font-size: 14px;
-  line-height: 1.4;
 }
 
 
-/* =================================
+/* =========================================
    ADD BUTTON
-   ================================= */
+========================================= */
 
 .rm-add-btn {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
 
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
 
   background: var(--rm-primary);
-  color: #fff;
+  color: white;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   cursor: pointer;
-  flex-shrink: 0;
 
-  box-shadow: 0 6px 16px
-    color-mix(in srgb, var(--rm-primary) 28%, transparent);
+  box-shadow:
+    0 8px 18px
+    color-mix(
+      in srgb,
+      var(--rm-primary) 30%,
+      transparent
+    );
 
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
+  transition: 160ms ease;
 
   mat-icon {
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-  }
-
-  &:hover {
-    background: var(--rm-primary-dark);
-    transform: translateY(-1px);
+    font-size: 25px;
+    width: 25px;
+    height: 25px;
   }
 
   &:active {
-    transform: scale(0.96);
+    transform: scale(.94);
   }
 }
 
 
-/* =================================
-   FRIDGE / KITCHEN TABS
-   ================================= */
+/* =========================================
+   TABS
+========================================= */
 
 .rm-tab-bar {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 1fr);
 
   gap: 8px;
 
   padding: 5px;
 
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 
-  border-radius: 14px;
+  border-radius: 16px;
 
   background: var(--rm-surface-alt);
+
   border: 1px solid var(--rm-border);
 }
 
 .rm-tab-btn {
-  min-height: 46px;
+  height: 48px;
 
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
 
   background: transparent;
+
   color: var(--rm-text-muted);
 
   display: flex;
   align-items: center;
   justify-content: center;
+
   gap: 8px;
 
   font-family: inherit;
-  font-size: 14px;
+
+  font-size: 15px;
   font-weight: 700;
 
   cursor: pointer;
 
-  transition:
-    background 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease;
+  transition: 180ms ease;
 
   mat-icon {
-    font-size: 19px;
-    width: 19px;
-    height: 19px;
-  }
-
-  &:hover:not(.rm-tab-btn--active) {
-    background: color-mix(
-      in srgb,
-      var(--rm-primary) 7%,
-      transparent
-    );
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
 }
 
 .rm-tab-btn--active {
   background: var(--rm-primary);
-  color: #fff;
+
+  color: white;
 
   box-shadow:
-    0 4px 12px
-    color-mix(in srgb, var(--rm-primary) 25%, transparent);
+    0 5px 14px
+    color-mix(
+      in srgb,
+      var(--rm-primary) 28%,
+      transparent
+    );
 }
 
 
-/* =================================
-   TAB CONTENT
-   ================================= */
+/* =========================================
+   TOOLBAR
+========================================= */
 
-.rm-tab-panel {
-  min-width: 0;
-}
-
-
-/* =================================
-   EMPTY STATE
-   ================================= */
-
-.rm-inventory .rm-empty-state {
-  min-height: 180px;
-
+.rm-inventory-toolbar {
   display: flex;
-  flex-direction: column;
+
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 
-  text-align: center;
+  gap: 14px;
 
-  padding: 28px 20px;
+  margin-bottom: 16px;
 }
 
-.rm-inventory .rm-empty-state mat-icon {
-  width: 42px;
-  height: 42px;
+.rm-inventory-title {
+  display: flex;
 
-  font-size: 42px;
+  align-items: center;
 
-  color: var(--rm-primary);
-
-  opacity: 0.8;
-
-  margin-bottom: 12px;
-}
-
-.rm-inventory .rm-empty-state p {
-  margin: 0;
+  gap: 8px;
 
   color: var(--rm-text);
 
-  font-size: 15px;
-  font-weight: 700;
+  white-space: nowrap;
+
+  mat-icon {
+    color: var(--rm-primary);
+  }
+
+  strong {
+    font-size: 18px;
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--rm-text-muted);
+  }
 }
 
-.rm-empty-state__sub {
-  margin-top: 6px !important;
 
-  color: var(--rm-text-muted) !important;
+/* =========================================
+   SEARCH
+========================================= */
 
-  font-size: 13px !important;
-  font-weight: 400 !important;
-}
+.rm-search-box {
+  width: min(330px, 50%);
 
-
-/* =================================
-   INVENTORY LIST
-   ================================= */
-
-.rm-inventory-list {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 12px;
+
+  height: 44px;
+
+  border-radius: 13px;
+
+  background: var(--rm-surface);
+
+  border: 1px solid var(--rm-border);
+
+  mat-icon {
+    color: var(--rm-text-muted);
+  }
+
+  input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font: inherit;
+
+    color: var(--rm-text);
+  }
 }
 
-.rm-inventory-card {
-  padding: 14px 16px;
+
+/* =========================================
+   INVENTORY GRID
+========================================= */
+
+.rm-inventory-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 12px;
+
+  padding-bottom: 100px;
+}
+
+
+/* =========================================
+   MINI CARD
+========================================= */
+
+.rm-inventory-mini-card {
+  position: relative;
+
+  min-width: 0;
+
+  padding: 10px;
+
+  border: 1px solid var(--rm-border);
+
+  border-radius: 16px;
+
+  background: var(--rm-surface);
 
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;
 }
 
-.rm-inventory-card:hover {
+.rm-inventory-mini-card:hover {
+  transform: translateY(-2px);
+
   box-shadow: var(--rm-shadow-hover);
 }
 
-.rm-inventory-card__top {
+
+/* =========================================
+   ITEM IMAGE
+========================================= */
+
+.rm-item-image {
+  width: 100%;
+
+  height: 86px;
+
+  border-radius: 12px;
+
   display: flex;
+
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+
+  justify-content: center;
+
+  background: var(--rm-surface-alt);
+
+  margin-bottom: 8px;
+
+  overflow: hidden;
 }
 
-.rm-inventory-card__name {
-  min-width: 0;
 
-  font-size: 15px;
-  font-weight: 700;
+.rm-item-emoji {
+  font-size: 52px;
+
+  line-height: 1;
+
+  display: block;
+}
+
+
+/* =========================================
+   ITEM NAME
+========================================= */
+
+.rm-item-name {
+  margin: 0 0 6px;
 
   color: var(--rm-text);
 
+  font-size: 15px;
+
+  font-weight: 700;
+
+  line-height: 1.25;
+
   overflow: hidden;
+
   text-overflow: ellipsis;
+
   white-space: nowrap;
 }
 
-.rm-inventory-card__meta {
-  margin-top: 5px;
 
-  font-size: 12.5px;
+/* =========================================
+   STATUS
+========================================= */
 
-  color: var(--rm-text-muted);
-}
-
-.rm-inventory-card__meta--muted {
-  margin-top: 7px;
-  opacity: 0.75;
-}
-
-
-/* =================================
-   STATUS CHIP
-   ================================= */
-
-.rm-inventory .rm-status-chip {
+.rm-status-chip {
   display: inline-flex;
+
   align-items: center;
+
   gap: 4px;
 
-  flex-shrink: 0;
+  max-width: 100%;
 
-  font-size: 12px;
-  font-weight: 700;
-
-  padding: 5px 9px;
+  padding: 4px 8px;
 
   border-radius: 999px;
 
+  font-size: 11px;
+
+  font-weight: 700;
+
+  margin-bottom: 5px;
+
   mat-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
+
+    font-size: 14px;
   }
 }
 
-.rm-inventory .rm-status-chip--available {
+
+.rm-status-chip--available {
   background: var(--rm-success-bg);
+
   color: var(--rm-success);
 }
 
-.rm-inventory .rm-status-chip--low {
+
+.rm-status-chip--low {
   background: #fff4e5;
+
   color: #b06a00;
 }
 
-.rm-inventory .rm-status-chip--out {
+
+.rm-status-chip--out {
   background: #fdecea;
+
   color: #c62828;
 }
 
 
-/* =================================
-   QUICK ACTIONS
-   ================================= */
+/* =========================================
+   QUANTITY
+========================================= */
 
-.rm-inventory-card__actions {
+.rm-item-quantity {
+  color: var(--rm-text-muted);
+
+  font-size: 12px;
+
+  margin-bottom: 6px;
+}
+
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.rm-mini-footer {
   display: flex;
+
   align-items: center;
+
+  justify-content: space-between;
+
   gap: 6px;
 
-  margin-top: 12px;
-
-  padding-top: 10px;
+  padding-top: 7px;
 
   border-top: 1px solid var(--rm-border);
 }
 
-.rm-inventory-card__spacer {
+
+.rm-updated-by {
+  min-width: 0;
+
   flex: 1;
+
+  color: var(--rm-text-muted);
+
+  font-size: 10.5px;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
 }
 
-.rm-inventory-quick-btn {
-  width: 36px;
-  height: 36px;
 
-  border-radius: 10px;
+/* =========================================
+   EDIT / DELETE
+========================================= */
 
-  border: 1px solid var(--rm-border);
+.rm-mini-footer-actions {
+  display: flex;
 
-  background: var(--rm-surface);
+  align-items: center;
 
-  font-size: 15px;
+  gap: 2px;
+
+  flex-shrink: 0;
+}
+
+
+.rm-icon-action {
+  width: 30px;
+
+  height: 30px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--rm-text-muted);
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   cursor: pointer;
 
-  transition:
-    background 160ms ease,
-    transform 120ms ease,
-    border-color 160ms ease;
+  mat-icon {
+    width: 18px;
+    height: 18px;
+
+    font-size: 18px;
+  }
 
   &:hover {
     background: var(--rm-surface-alt);
-    border-color: color-mix(
-      in srgb,
-      var(--rm-primary) 30%,
-      var(--rm-border)
-    );
-  }
-
-  &:active {
-    transform: scale(0.93);
   }
 }
 
 
-/* =================================
+.rm-icon-action--delete:hover {
+  color: #c62828;
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 768px) {
+
+  .rm-inventory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 10px;
+  }
+
+  .rm-item-image {
+    height: 78px;
+  }
+
+  .rm-item-emoji {
+    font-size: 46px;
+  }
+
+}
+
+
+/* =========================================
    MOBILE
-   ================================= */
+========================================= */
 
 @media (max-width: 480px) {
-  .rm-mod-header h1 {
-    font-size: 26px;
+
+  .rm-inventory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 8px;
   }
 
-  .rm-mod-header__icon {
-    width: 38px;
-    height: 38px;
+
+  .rm-inventory-mini-card {
+    padding: 8px;
+
+    border-radius: 14px;
   }
 
-  .rm-add-btn {
-    width: 42px;
-    height: 42px;
+
+  .rm-item-image {
+    height: 68px;
+
+    border-radius: 10px;
+
+    margin-bottom: 7px;
   }
 
-  .rm-tab-btn {
+
+  .rm-item-emoji {
+    font-size: 40px;
+  }
+
+
+  .rm-item-name {
     font-size: 13px;
-    gap: 6px;
+
+    margin-bottom: 5px;
   }
 
-  .rm-inventory-card {
-    padding: 13px 14px;
-  }
-}
 
-/* ================================
-   LIST
-   ================================ */
+  .rm-status-chip {
+    padding: 3px 6px;
 
-.rm-inventory-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+    font-size: 10px;
 
-.rm-inventory-card {
-  padding: 14px 16px;
-}
+    margin-bottom: 4px;
 
-.rm-inventory-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
+    mat-icon {
+      width: 12px;
+      height: 12px;
 
-.rm-inventory-card__name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--rm-text);
-}
-
-.rm-inventory-card__meta {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--rm-text-muted);
-}
-
-.rm-inventory-card__meta--muted {
-  opacity: 0.8;
-}
-
-.rm-inventory-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.rm-inventory-card__spacer {
-  flex: 1;
-}
-
-/* ================================
-   STATUS CHIP
-   Reuses the same color language already used for UPI settlement statuses
-   (rm-settlement-card__status--owe/--receive/--confirm in expenses.scss):
-   green = good, amber = caution, red = bad. Not a new palette.
-   ================================ */
-
-.rm-status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  padding: 3px 9px;
-  border-radius: 999px;
-
-  mat-icon {
-    font-size: 15px;
-    width: 15px;
-    height: 15px;
+      font-size: 12px;
+    }
   }
 
-  &--available {
-    background: var(--rm-success-bg);
-    color: var(--rm-success);
+
+  .rm-item-quantity {
+    font-size: 10px;
   }
 
-  &--low {
-    background: #fff4e5;
-    color: #b06a00;
+
+  .rm-mini-footer {
+    padding-top: 5px;
   }
 
-  &--out {
-    background: #fdecea;
-    color: #c62828;
-  }
-}
 
-/* ================================
-   QUICK STATUS BUTTONS
-   ================================ */
-
-.rm-inventory-quick-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid var(--rm-border);
-  background: var(--rm-surface);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 160ms ease, transform 120ms ease;
-
-  &:hover {
-    background: var(--rm-surface-alt);
+  .rm-updated-by {
+    display: none;
   }
 
-  &:active {
-    transform: scale(0.94);
+
+  .rm-mini-footer-actions {
+    width: 100%;
+
+    justify-content: flex-end;
   }
+
+
+  .rm-icon-action {
+    width: 28px;
+
+    height: 28px;
+
+    mat-icon {
+      font-size: 17px;
+
+      width: 17px;
+
+      height: 17px;
+    }
+  }
+
 }

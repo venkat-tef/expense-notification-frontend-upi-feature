@@ -1,13 +1,37 @@
-import { Component, inject, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
+
+import {
+  MAT_DIALOG_DATA,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
+
+import {
+  MatFormFieldModule,
+} from '@angular/material/form-field';
+
+import {
+  MatInputModule,
+} from '@angular/material/input';
+
+import {
+  MatSelectModule,
+} from '@angular/material/select';
+
+import {
+  MatButtonModule,
+} from '@angular/material/button';
+
+import {
+  MatIconModule,
+} from '@angular/material/icon';
 
 import {
   INVENTORY_CATEGORIES,
@@ -20,21 +44,29 @@ import {
   InventoryStatus,
   InventoryUnit,
 } from '../../../core/models/inventory.model';
-import { InventoryItemInput, InventoryService } from '../../../core/services/inventory.service';
-// import { InventoryItemInput, InventoryService } from '../../../core/services/inventory.service';
+
+import {
+  InventoryItemInput,
+} from '../../../core/services/inventory.service';
+
 
 export interface InventoryItemDialogData {
-  /** Which tab the user was on when they tapped "Add Item" — preselects the category. */
+
   category: InventoryCategory;
-  /** Present when editing an existing item; absent when adding a new one. */
+
   item?: InventoryItem;
 }
 
-export type InventoryItemDialogResult = InventoryItemInput;
+
+export type InventoryItemDialogResult =
+  InventoryItemInput;
+
 
 @Component({
   selector: 'app-inventory-item-dialog',
+
   standalone: true,
+
   imports: [
     CommonModule,
     FormsModule,
@@ -45,81 +77,264 @@ export type InventoryItemDialogResult = InventoryItemInput;
     MatButtonModule,
     MatIconModule,
   ],
-  templateUrl: './inventory-item-dialog.html',
-  styleUrl: './inventory-item-dialog.scss',
+
+  templateUrl:
+    './inventory-item-dialog.html',
+
+  styleUrl:
+    './inventory-item-dialog.scss',
 })
 export class InventoryItemDialog {
-  private readonly ref = inject(MatDialogRef<InventoryItemDialog>);
-  private readonly inventoryService = inject(InventoryService);
-  private readonly snackBar = inject(MatSnackBar);
-  readonly data = inject<InventoryItemDialogData>(MAT_DIALOG_DATA);
 
-  readonly categories = INVENTORY_CATEGORIES;
-  readonly categoryLabels = INVENTORY_CATEGORY_LABEL;
-  readonly statuses = INVENTORY_STATUSES;
-  readonly statusLabels = INVENTORY_STATUS_LABEL;
-  readonly units = INVENTORY_UNITS;
+  // ============================================================
+  // DEPENDENCIES
+  // ============================================================
 
-  readonly isEdit = !!this.data.item;
+  private readonly ref =
+    inject(
+      MatDialogRef<InventoryItemDialog>
+    );
 
-  readonly name = signal(this.data.item?.name ?? '');
-  readonly category = signal<InventoryCategory>(this.data.item?.category ?? this.data.category);
-  readonly status = signal<InventoryStatus>(this.data.item?.status ?? 'available');
-  readonly quantityInput = signal(
-    this.data.item?.quantity != null ? String(this.data.item.quantity) : ''
-  );
-  readonly unit = signal<InventoryUnit | ''>(this.data.item?.unit ?? '');
-  readonly expiryDate = signal(this.data.item?.expiryDate ?? '');
+  readonly data =
+    inject<InventoryItemDialogData>(
+      MAT_DIALOG_DATA
+    );
 
-  readonly saving = signal(false);
-  readonly errors = signal<Record<string, string>>({});
+
+  // ============================================================
+  // CONSTANTS
+  // ============================================================
+
+  readonly categories =
+    INVENTORY_CATEGORIES;
+
+  readonly categoryLabels =
+    INVENTORY_CATEGORY_LABEL;
+
+  readonly statuses =
+    INVENTORY_STATUSES;
+
+  readonly statusLabels =
+    INVENTORY_STATUS_LABEL;
+
+  readonly units =
+    INVENTORY_UNITS;
+
+
+  // ============================================================
+  // EDIT MODE
+  // ============================================================
+
+  readonly isEdit =
+    !!this.data.item;
+
+
+  // ============================================================
+  // FORM SIGNALS
+  // ============================================================
+
+  readonly name =
+    signal(
+      this.data.item?.name ?? ''
+    );
+
+
+  readonly category =
+    signal<InventoryCategory>(
+      this.data.item?.category ??
+      this.data.category
+    );
+
+
+  readonly status =
+    signal<InventoryStatus>(
+      this.data.item?.status ??
+      'available'
+    );
+
+
+  readonly quantityInput =
+    signal(
+      this.data.item?.quantity != null
+        ? String(
+            this.data.item.quantity
+          )
+        : ''
+    );
+
+
+  readonly unit =
+    signal<InventoryUnit | ''>(
+      this.data.item?.unit ?? ''
+    );
+
+
+  readonly expiryDate =
+    signal(
+      this.data.item?.expiryDate ?? ''
+    );
+
+
+  // ============================================================
+  // SAVING STATE
+  // ============================================================
+
+  readonly saving =
+    signal(false);
+
+
+  readonly errors =
+    signal<Record<string, string>>({});
+
+
+  // ============================================================
+  // VALIDATION
+  // ============================================================
 
   private validate(): boolean {
-    const errs: Record<string, string> = {};
 
-    const name = this.name().trim();
-    if (!name) errs['name'] = 'Item name is required.';
-    else if (name.length > 60) errs['name'] = 'Maximum 60 characters.';
+    const errors:
+      Record<string, string> = {};
 
-    const qtyRaw = String(this.quantityInput() ?? '').trim();
-    if (qtyRaw) {
-      const qty = Number(qtyRaw);
-      if (isNaN(qty) || qty < 0) {
-        errs['quantity'] = 'Enter a valid quantity.';
+
+    const itemName =
+      this.name()
+        .trim();
+
+
+    if (!itemName) {
+
+      errors['name'] =
+        'Item name is required.';
+
+    } else if (
+      itemName.length > 60
+    ) {
+
+      errors['name'] =
+        'Maximum 60 characters.';
+    }
+
+
+    const quantityRaw =
+      String(
+        this.quantityInput() ?? ''
+      ).trim();
+
+
+    if (quantityRaw) {
+
+      const quantity =
+        Number(quantityRaw);
+
+
+      if (
+        Number.isNaN(quantity) ||
+        quantity < 0
+      ) {
+
+        errors['quantity'] =
+          'Enter a valid quantity.';
       }
     }
 
-    this.errors.set(errs);
-    return Object.keys(errs).length === 0;
+
+    this.errors.set(errors);
+
+
+    return (
+      Object.keys(errors).length === 0
+    );
   }
 
+
+  // ============================================================
+  // SAVE
+  // ============================================================
+
   async save(): Promise<void> {
-    if (!this.validate()) return;
+
+    // ----------------------------------------------------------
+    // IMPORTANT:
+    // Prevent double-click / duplicate save
+    // ----------------------------------------------------------
+
+    if (this.saving()) {
+      return;
+    }
+
+
+    if (!this.validate()) {
+      return;
+    }
+
+
     this.saving.set(true);
 
-    try {
-      const qtyRaw = String(this.quantityInput() ?? '').trim();
 
-      const result: InventoryItemDialogResult = {
-        name: this.name().trim(),
-        category: this.category(),
-        status: this.status(),
-        quantity: qtyRaw ? Number(qtyRaw) : undefined,
-        unit: this.unit() || undefined,
-        expiryDate: this.expiryDate() || undefined,
+    try {
+
+      const quantityRaw =
+        String(
+          this.quantityInput() ?? ''
+        ).trim();
+
+
+      const result:
+        InventoryItemDialogResult = {
+
+        name:
+          this.name().trim(),
+
+        category:
+          this.category(),
+
+        status:
+          this.status(),
+
+        quantity:
+          quantityRaw
+            ? Number(quantityRaw)
+            : undefined,
+
+        unit:
+          this.unit() || undefined,
+
+        expiryDate:
+          this.expiryDate() || undefined,
       };
 
+
+      // --------------------------------------------------------
+      // ONLY RETURN RESULT
+      //
+      // Parent component handles Firestore add/update.
+      // --------------------------------------------------------
+
       this.ref.close(result);
-    } catch (err) {
-      console.error('Failed to save inventory item', err);
-      const message = err instanceof Error ? err.message : 'Could not save the item. Please try again.';
-      this.snackBar.open(message, 'OK', { duration: 3000 });
-    } finally {
+
+    } catch (error) {
+
+      console.error(
+        'Failed to save inventory item',
+        error
+      );
+
       this.saving.set(false);
     }
   }
 
+
+  // ============================================================
+  // CANCEL
+  // ============================================================
+
   cancel(): void {
+
+    if (this.saving()) {
+      return;
+    }
+
     this.ref.close();
   }
 }

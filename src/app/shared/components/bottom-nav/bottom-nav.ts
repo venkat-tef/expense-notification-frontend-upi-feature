@@ -20,9 +20,10 @@ export class BottomNav {
     { path: '/dashboard', label: 'Home', icon: 'home' },
     { path: '/water', label: 'Water', icon: 'water_drop' },
     { path: '/cooking', label: 'Garbage', icon: 'delete' },
-     { path: '/history', label: 'History', icon: 'history' },
-    { path: '/expenses', label: 'Expenses', icon: 'payments' },
     { path: '/inventory', label: 'Inventory', icon: 'kitchen' },
+    //  { path: '/history', label: 'History', icon: 'history' },
+    { path: '/expenses', label: 'Expenses', icon: 'payments' },
+    
     { path: '/settings', label: 'Settings', icon: 'settings' }
   ];
 }

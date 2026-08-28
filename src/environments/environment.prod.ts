@@ -15,4 +15,11 @@ export const environment = {
     cloudName: 'eaqx7g3j',
     uploadPreset: 'nestly_uploads',
   },
+
+  // PHASE 4 — base URL of the deployed Nestly push backend (expense-notification-backend
+  // on Render), used ONLY by VoiceAiService for POST /api/voice/interpret.
+  // TODO: confirm this matches your actual Render service URL before deploying —
+  // it's inferred from render.yaml's service name ("nestly-push-backend") and
+  // Render's URL convention, not verified against a live deployment.
+  voiceAiApiUrl: 'https://nestly-push-backend.onrender.com',
 };

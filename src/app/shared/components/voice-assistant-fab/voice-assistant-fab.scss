@@ -1,0 +1,33 @@
+.rm-voice-fab {
+  position: fixed;
+  right: 16px;
+  /* Sits just above the fixed bottom-nav bar (its own padding + safe-area handles the rest). */
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 25;
+
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--rm-primary);
+  color: #fff;
+  box-shadow: var(--rm-shadow-hover);
+
+  transition: transform 0.15s ease;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+}

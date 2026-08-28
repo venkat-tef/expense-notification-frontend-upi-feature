@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { BottomNav } from './shared/components/bottom-nav/bottom-nav';
+import { VoiceAssistantFab } from './shared/components/voice-assistant-fab/voice-assistant-fab';
 import { AuthService } from './core/services/auth.service';
 import { MemberService } from './core/services/member.service';
 import { NotificationService } from './core/services/notification.service';
@@ -12,7 +13,7 @@ import { filter } from 'rxjs';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, BottomNav],
+  imports: [RouterOutlet, BottomNav, VoiceAssistantFab],
   template: `
   @if (ready()) {
   <div class="rm-app-scroll">
@@ -20,6 +21,7 @@ import { filter } from 'rxjs';
   </div>
 
   @if (showBottomNav()) {
+    <app-voice-assistant-fab />
     <app-bottom-nav />
   }
 }@else {

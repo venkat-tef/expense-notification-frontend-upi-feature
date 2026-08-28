@@ -22,4 +22,10 @@ export const environment = {
     cloudName: 'eaqx7g3j',
     uploadPreset: 'nestly_uploads',
   },
+
+  // PHASE 4 — base URL of the Nestly push backend (expense-notification-backend),
+  // used ONLY by VoiceAiService for POST /api/voice/interpret. No secrets here —
+  // the Gemini API key lives on the backend and is never exposed to the client.
+  // Matches the backend's default local PORT (see backend .env.example).
+  voiceAiApiUrl: 'http://localhost:3000',
 };
