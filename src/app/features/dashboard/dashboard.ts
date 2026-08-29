@@ -17,7 +17,6 @@ import { MonthlySummaryService } from '../../core/services/monthly-summary.servi
 import { AppNotification, NotificationType } from '../../core/models/notification.model';
 import { TransparentAvatarComponent } from './transparent-avatar.component';
 
-
 interface DashCard {
   path: string;
   title: string;
@@ -187,10 +186,20 @@ private readonly NAMED_AVATAR_VIDEOS: Record<string, string> = {
   venki: 'assets/avatars/venki-wave.mp4',
 };
 
+/**
+ * Default avatar for unrecognized members / logged-out state.
+ */
+private readonly DEFAULT_AVATAR_VIDEO = 'assets/avatars/default-hero.mp4';
+
 readonly avatarVideoUrl = computed(() => {
   const member = this.memberService.currentMember();
   const key = member?.name?.trim().toLowerCase();
-  return key ? this.NAMED_AVATAR_VIDEOS[key] : undefined;
+
+  if (key && this.NAMED_AVATAR_VIDEOS[key]) return this.NAMED_AVATAR_VIDEOS[key];
+  // Member has their own static photo — let avatarUrl() handle it, don't override.
+  if (key && this.NAMED_AVATARS[key]) return undefined;
+  // Unknown member or nobody logged in — temporary default.
+  return this.DEFAULT_AVATAR_VIDEO;
 });
 
 readonly avatarUrl = computed(() => {
