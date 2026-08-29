@@ -658,7 +658,9 @@ p {
   }
 
   .mat-mdc-select-panel,
-  .cdk-overlay-pane .mat-mdc-select-panel {
+  .cdk-overlay-pane .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel,
+  .cdk-overlay-pane .mat-mdc-autocomplete-panel {
     background: var(--rm-surface) !important;
   }
 

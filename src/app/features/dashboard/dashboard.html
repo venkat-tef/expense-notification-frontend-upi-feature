@@ -133,7 +133,14 @@
              has no photoUrl set. No animation applied.
              ============================================================ -->
 
-       @if (avatarUrl(); as avatar) {
+       @if (avatarVideoUrl(); as avatarVideo) {
+
+  <app-transparent-avatar
+    class="rm-welcome-hero__avatar"
+    [src]="avatarVideo"
+  ></app-transparent-avatar>
+
+} @else if (avatarUrl(); as avatar) {
 
   <img
     class="rm-welcome-hero__avatar"

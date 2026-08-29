@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -26,6 +27,10 @@ import {
 } from '@angular/material/select';
 
 import {
+  MatAutocompleteModule,
+} from '@angular/material/autocomplete';
+
+import {
   MatButtonModule,
 } from '@angular/material/button';
 
@@ -44,6 +49,11 @@ import {
   InventoryStatus,
   InventoryUnit,
 } from '../../../core/models/inventory.model';
+
+import {
+  INVENTORY_CATALOG_GROUPS,
+  InventoryCatalogGroup,
+} from '../../../core/models/inventory-catalog';
 
 import {
   InventoryItemInput,
@@ -74,6 +84,7 @@ export type InventoryItemDialogResult =
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatIconModule,
   ],
@@ -151,6 +162,40 @@ export class InventoryItemDialog {
       this.data.item?.status ??
       'available'
     );
+
+
+  // ============================================================
+  // PREDEFINED ITEM SUGGESTIONS (Fridge / Kitchen autocomplete)
+  //
+  // Reruns whenever `name` (search text) or `category` changes —
+  // so switching the Section select re-orders suggestions to
+  // match, per spec ("Fridge -> Fridge suggestions first").
+  // ============================================================
+
+  readonly filteredGroups =
+    computed<InventoryCatalogGroup[]>(() => {
+
+      const groups =
+        INVENTORY_CATALOG_GROUPS[this.category()];
+
+      const search =
+        this.name()
+          .trim()
+          .toLowerCase();
+
+      if (!search) {
+        return groups;
+      }
+
+      return groups
+        .map((group) => ({
+          label: group.label,
+          items: group.items.filter((item) =>
+            item.toLowerCase().includes(search)
+          ),
+        }))
+        .filter((group) => group.items.length > 0);
+    });
 
 
   readonly quantityInput =

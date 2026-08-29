@@ -15,6 +15,8 @@ import { ThemeService } from '../../core/services/theme.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { MonthlySummaryService } from '../../core/services/monthly-summary.service';
 import { AppNotification, NotificationType } from '../../core/models/notification.model';
+import { TransparentAvatarComponent } from './transparent-avatar.component';
+
 
 interface DashCard {
   path: string;
@@ -61,7 +63,7 @@ function currentMonthKey(): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatBadgeModule],
+  imports: [CommonModule, MatIconModule, MatBadgeModule, TransparentAvatarComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -175,6 +177,21 @@ private readonly NAMED_AVATARS: Record<string, string> = {
   narendra: 'assets/avatars/narendra.png',
   jagan: 'assets/avatars/jagan.png',
 };
+
+/**
+ * ADDITIVE — animated (transparent, looping) avatar videos, keyed the same
+ * way as NAMED_AVATARS. Only members listed here get the video treatment;
+ * everyone else keeps falling back to the static NAMED_AVATARS image.
+ */
+private readonly NAMED_AVATAR_VIDEOS: Record<string, string> = {
+  venki: 'assets/avatars/venki-wave.mp4',
+};
+
+readonly avatarVideoUrl = computed(() => {
+  const member = this.memberService.currentMember();
+  const key = member?.name?.trim().toLowerCase();
+  return key ? this.NAMED_AVATAR_VIDEOS[key] : undefined;
+});
 
 readonly avatarUrl = computed(() => {
   const member = this.memberService.currentMember();

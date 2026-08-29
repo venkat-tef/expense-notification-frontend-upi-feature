@@ -139,9 +139,13 @@
           <!-- ITEM IMAGE -->
 
           <div class="rm-item-image">
-            <span class="rm-item-emoji">
-              {{ getItemEmoji(item.name) }}
-            </span>
+            <img
+              class="rm-item-img"
+              [src]="getItemImage(item)"
+              [alt]="item.name"
+              loading="lazy"
+              (error)="onImageError($event, item.category)"
+            />
           </div>
 
 

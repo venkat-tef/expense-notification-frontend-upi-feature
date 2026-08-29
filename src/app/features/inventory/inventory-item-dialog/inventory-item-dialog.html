@@ -14,6 +14,7 @@
       matInput
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
+      [matAutocomplete]="itemNameAuto"
       maxlength="60"
       placeholder="e.g. Milk, Turmeric, Rice"
     />
@@ -25,6 +26,26 @@
     }
 
   </mat-form-field>
+
+  <!-- Predefined item suggestions — still a free-text field, this is
+       just a searchable shortcut list; any custom name works too. -->
+  <mat-autocomplete #itemNameAuto="matAutocomplete">
+
+    @for (group of filteredGroups(); track group.label) {
+
+      <mat-optgroup [label]="group.label">
+
+        @for (item of group.items; track item) {
+          <mat-option [value]="item">
+            {{ item }}
+          </mat-option>
+        }
+
+      </mat-optgroup>
+
+    }
+
+  </mat-autocomplete>
 
 
   <!-- CATEGORY -->

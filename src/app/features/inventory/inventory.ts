@@ -27,6 +27,8 @@ import {
   InventoryItemDialogResult,
 } from './inventory-item-dialog/inventory-item-dialog';
 
+import { getInventoryItemImage, getInventoryFallbackImage } from '../../core/models/inventory-images';
+
 
 interface TabDef {
   id: InventoryCategory;
@@ -157,180 +159,33 @@ readonly visibleItems = computed<InventoryItem[]>(() =>
 
 
   // ==========================================================
-  // ITEM EMOJI
+  // ITEM IMAGE
+  //
+  // Stable local SVG mapping (see inventory-images.ts) — replaces
+  // the old emoji lookup. No network calls per card.
   // ==========================================================
 
-getItemEmoji(itemName: string): string {
-  const name = (itemName || '').toLowerCase().trim();
-
-  // ==========================================================
-  // VEGETABLES
-  // ==========================================================
-
-  if (name.includes('tomato')) return '🍅';
-  if (name.includes('onion')) return '🧅';
-  if (name.includes('potato')) return '🥔';
-  if (name.includes('carrot')) return '🥕';
-  if (name.includes('brinjal') || name.includes('eggplant')) return '🍆';
-  if (name.includes('chilli') || name.includes('chili') || name.includes('mirchi')) return '🌶️';
-  if (name.includes('green chilli')) return '🌶️';
-  if (name.includes('garlic')) return '🧄';
-  if (name.includes('ginger')) return '🫚';
-  if (name.includes('corn')) return '🌽';
-  if (name.includes('spinach') || name.includes('palak')) return '🥬';
-  if (name.includes('cabbage')) return '🥬';
-  if (name.includes('cauliflower')) return '🥦';
-  if (name.includes('broccoli')) return '🥦';
-  if (name.includes('capsicum') || name.includes('bell pepper')) return '🫑';
-  if (name.includes('cucumber')) return '🥒';
-  if (name.includes('peas')) return '🫛';
-  if (name.includes('mushroom')) return '🍄';
-
-  // ==========================================================
-  // LEAVES / HERBS
-  // ==========================================================
-
-  if (name.includes('curry leaves')) return '🌿';
-  if (name.includes('coriander')) return '🌿';
-  if (name.includes('mint')) return '🌿';
-  if (name.includes('pudina')) return '🌿';
-
-  // ==========================================================
-  // DAIRY / FRIDGE
-  // ==========================================================
-
-  if (name.includes('milk')) return '🥛';
-  if (name.includes('cheese')) return '🧀';
-  if (name.includes('butter')) return '🧈';
-  if (name.includes('ghee')) return '🫙';
-
-  if (
-    name.includes('curd') ||
-    name.includes('yogurt') ||
-    name.includes('yoghurt')
-  ) {
-    return '🥣';
+  getItemImage(item: InventoryItem): string {
+    return getInventoryItemImage(item.name, item.category);
   }
 
-  // ==========================================================
-  // EGGS / MEAT
-  // ==========================================================
-
-  if (name.includes('egg')) return '🥚';
-  if (name.includes('chicken')) return '🍗';
-  if (name.includes('fish')) return '🐟';
-  if (name.includes('prawn') || name.includes('shrimp')) return '🦐';
-  if (name.includes('mutton') || name.includes('meat')) return '🥩';
 
   // ==========================================================
-  // FRUITS
+  // IMAGE LOAD FAILURE
+  //
+  // If a mapped photo is missing/renamed, swap to the category
+  // fallback instead of leaving a broken image icon on the card.
   // ==========================================================
 
-  if (name.includes('apple')) return '🍎';
-  if (name.includes('banana')) return '🍌';
-  if (name.includes('orange')) return '🍊';
-  if (name.includes('mango')) return '🥭';
-  if (name.includes('grape')) return '🍇';
-  if (name.includes('watermelon')) return '🍉';
-  if (name.includes('lemon') || name.includes('lime')) return '🍋';
-  if (name.includes('strawberry')) return '🍓';
+  onImageError(event: Event, category: InventoryCategory): void {
 
-  // ==========================================================
-  // KITCHEN GROCERIES
-  // ==========================================================
+    const img = event.target as HTMLImageElement;
 
-  if (name.includes('rice')) return '🍚';
-  if (name.includes('atta') || name.includes('flour')) return '🌾';
-  if (name.includes('wheat')) return '🌾';
-  if (name.includes('dal')) return '🫘';
-  if (name.includes('lentil')) return '🫘';
-  if (name.includes('chana')) return '🫘';
-  if (name.includes('beans')) return '🫘';
-  if (name.includes('bread')) return '🍞';
-  if (name.includes('pasta')) return '🍝';
-  if (name.includes('noodles')) return '🍜';
+    // Prevent an infinite loop if the fallback itself is missing.
+    img.onerror = null;
 
-  // ==========================================================
-  // OIL / SAUCES
-  // ==========================================================
-
-  if (name.includes('oil')) return '🫗';
-  if (name.includes('vinegar')) return '🧴';
-  if (name.includes('sauce')) return '🥫';
-  if (name.includes('ketchup')) return '🍅';
-
-  // ==========================================================
-  // SPICES / POWDERS
-  // ==========================================================
-
-  if (
-    name.includes('turmeric') ||
-    name.includes('pasupu') ||
-    name.includes('haldi')
-  ) {
-    return '🟡';
+    img.src = getInventoryFallbackImage(category);
   }
-
-  if (
-    name.includes('chilli powder') ||
-    name.includes('red chilli powder') ||
-    name.includes('mirapakaya powder')
-  ) {
-    return '🌶️';
-  }
-
-  if (
-    name.includes('garam masala') ||
-    name.includes('masala')
-  ) {
-    return '🫙';
-  }
-
-  if (
-    name.includes('coriander powder') ||
-    name.includes('dhaniya powder')
-  ) {
-    return '🌿';
-  }
-
-  if (
-    name.includes('cumin') ||
-    name.includes('jeera')
-  ) {
-    return '🫘';
-  }
-
-  if (
-    name.includes('mustard') ||
-    name.includes('avalu')
-  ) {
-    return '🟤';
-  }
-
-  if (
-    name.includes('pepper') ||
-    name.includes('black pepper')
-  ) {
-    return '⚫';
-  }
-
-  // ==========================================================
-  // BASIC KITCHEN ITEMS
-  // ==========================================================
-
-  if (name.includes('salt')) return '🧂';
-  if (name.includes('sugar')) return '🍬';
-  if (name.includes('coffee')) return '☕';
-  if (name.includes('tea')) return '🍵';
-  if (name.includes('water')) return '💧';
-  if (name.includes('juice')) return '🧃';
-
-  // ==========================================================
-  // DEFAULT
-  // ==========================================================
-
-  return '📦';
-}
 
   // ==========================================================
   // ADD ITEM
