@@ -1043,6 +1043,41 @@ export class Expenses {
   }
 
 
+  /**
+   * True when the "Send Reminder" button should be shown at all: the current
+   * viewer is the payment approver, AND this card belongs to someone else who
+   * still owes money (the approver's own card is "Settle My Share" instead —
+   * see isApproverSelf() — and a member always sees their own "Pay via
+   * UPI"/"I've Paid" buttons on their own card).
+   *
+   * Whether the button is enabled or disabled (6-hour cooldown) is a separate
+   * question — see reminderDisabled().
+   */
+canSendReminder(
+  memberId: string
+): boolean {
+  return (
+    (this.memberService.isPaymentApprover() || this.memberService.isAdmin()) &&
+    !this.isSelf(memberId)
+  );
+}
+
+
+  /**
+   * True while the reminder button for this member should be disabled — a
+   * reminder was already sent within the last 6 hours. Becomes false again
+   * (button re-enables) once the cooldown elapses.
+   */
+  reminderDisabled(
+    memberId: string
+  ): boolean {
+    return this.paymentService.reminderOnCooldown(
+      this.selectedMonth(),
+      memberId
+    );
+  }
+
+
   // ==========================================================
   // PAY VIA UPI
   // ==========================================================
@@ -1326,6 +1361,52 @@ export class Expenses {
           'rm-snack-success',
       }
     );
+  }
+
+
+  // ==========================================================
+  // SEND REMINDER (approver -> one member who still owes)
+  // ==========================================================
+
+  async sendReminder(
+    s: MemberSettlement
+  ): Promise<void> {
+
+    if (this.reminderDisabled(s.memberId)) {
+      // Guards against a stray click landing between the button visually
+      // disabling and this handler running (e.g. a queued double-tap).
+      return;
+    }
+
+    try {
+      await this.paymentService.sendReminder(
+        this.selectedMonth(),
+        s.memberId,
+        s.memberName,
+        s.remaining,
+        this.monthLabel(
+          this.selectedMonth()
+        )
+      );
+
+      this.snackBar.open(
+        `Reminder sent to ${s.memberName}.`,
+        undefined,
+        {
+          duration: 2200,
+        }
+      );
+    } catch (err) {
+      console.error('sendReminder failed', err);
+
+      this.snackBar.open(
+        'Could not send the reminder — please try again.',
+        'OK',
+        {
+          duration: 3000,
+        }
+      );
+    }
   }
 
 

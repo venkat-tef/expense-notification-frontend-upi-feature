@@ -20,6 +20,10 @@ import { AuthService } from './auth.service';
 
 const COLLECTION = 'settlement_payments';
 
+/** Approver's "Send Reminder" button is disabled for this long after each send, per member+month. */
+const REMINDER_COOLDOWN_MS = 1 * 60 * 60 * 1000; // 6 hours
+// const REMINDER_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+
 /**
  * Tracks the UPI payment lifecycle for members who owe money in a given month
  * (Pending -> Payment Pending Confirmation -> Settled).
@@ -61,6 +65,8 @@ export class SettlementPaymentService {
             markedPaidAt: data['markedPaidAt']?.toMillis?.() ?? undefined,
             confirmedAt: data['confirmedAt']?.toMillis?.() ?? undefined,
             confirmedByUid: data['confirmedByUid'] ?? undefined,
+            lastReminderAt: data['lastReminderAt']?.toMillis?.() ?? undefined,
+            lastReminderByUid: data['lastReminderByUid'] ?? undefined,
             createdAt: data['createdAt']?.toMillis?.() ?? Date.now(),
             updatedAt: data['updatedAt']?.toMillis?.() ?? Date.now(),
           };
@@ -99,6 +105,21 @@ export class SettlementPaymentService {
 
   statusFor(monthKey: string, memberId: string): PaymentStatus {
     return this.recordFor(monthKey, memberId)?.status ?? 'pending';
+  }
+
+  /**
+   * True while the approver's "Send Reminder" button should be disabled for this
+   * member+month — i.e. a reminder was sent less than REMINDER_COOLDOWN_MS ago. A
+   * member with no record yet (never reminded) is never on cooldown.
+   */
+  reminderOnCooldown(monthKey: string, memberId: string): boolean {
+    const lastReminderAt = this.recordFor(monthKey, memberId)?.lastReminderAt;
+
+    if (!lastReminderAt) {
+      return false;
+    }
+
+    return Date.now() - lastReminderAt < REMINDER_COOLDOWN_MS;
   }
 
   /**
@@ -233,6 +254,70 @@ export class SettlementPaymentService {
         )
         .catch((err) => console.error('markPaid: approver notification failed', err));
     }
+  }
+
+  /**
+   * Payment approver taps "Send Reminder" on another member's still-owing settlement
+   * card. Pings that ONE member only (never a broadcast) and records when it was sent so
+   * the button can disable itself for REMINDER_COOLDOWN_MS.
+   *
+   * Defense in depth: the UI already disables the button while reminderOnCooldown() is
+   * true, but this re-checks the cooldown here too so a stale/duplicate click (or a
+   * direct call) can never send a second reminder inside the cooldown window.
+   */
+  async sendReminder(
+    monthKey: string,
+    memberId: string,
+    memberName: string,
+    amount: number,
+    monthLabel: string
+  ): Promise<void> {
+    if (this.reminderOnCooldown(monthKey, memberId)) {
+      return;
+    }
+
+    const approverUid = this.auth.user()?.uid;
+
+    // setDoc(..., { merge: true }) here is deliberate: a member who hasn't marked paid
+    // yet may have NO settlement_payments doc at all (implicit 'pending' — see the
+    // class doc comment above). We only ever set lastReminderAt/lastReminderByUid, never
+    // `status`, so a merge onto a non-existent doc still reads back as 'pending', and a
+    // merge onto an existing doc never touches its status/markedPaidAt/confirmedAt.
+    await setDoc(
+      doc(
+        firestoreDb,
+        COLLECTION,
+        this.docId(monthKey, memberId)
+      ),
+      {
+        monthKey,
+        memberId,
+        memberName,
+        lastReminderAt: serverTimestamp(),
+        lastReminderByUid: approverUid ?? null,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // Targeted notification straight to the member being reminded — never a broadcast.
+    // Resolve their Auth uid the same way notifySettlementCompleted() does (uid ?? doc
+    // id) — for members created through the normal "Add Member" flow these are always
+    // identical, but this stays correct for an edge-seeded member where they aren't.
+    // Not awaited before this method returns, same reasoning as markPaid() above: a
+    // failure/slowness here must never block the reminder action itself.
+    const targetMember = this.memberService.members().find((m) => m.id === memberId);
+    const targetUid = targetMember?.uid ?? memberId;
+
+    this.notifications
+      .notifyMember(
+        'settlement_reminder',
+        '⏰ Payment Reminder',
+        `Reminder: you still owe ₹${amount.toFixed(2)} for ${monthLabel}.`,
+        '/expenses',
+        targetUid
+      )
+      .catch((err) => console.error('sendReminder: member notification failed', err));
   }
 
   /**

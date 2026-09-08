@@ -103,6 +103,10 @@ export interface SettlementPayment {
   confirmedAt?: number;
   /** uid of whoever confirmed — should always be the payment approver. */
   confirmedByUid?: string;
+  /** When the payment approver last tapped "Send Reminder" for this member+month. */
+  lastReminderAt?: number;
+  /** uid of whoever sent the reminder — should always be the payment approver. */
+  lastReminderByUid?: string;
   createdAt: number;
   updatedAt: number;
 }

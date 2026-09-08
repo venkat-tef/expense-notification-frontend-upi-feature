@@ -488,6 +488,29 @@
     color: #fff;
     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.28);
   }
+
+  // Approver's per-member "Send Reminder" button. Amber/warning tone to read as a
+  // nudge rather than a completed/positive action like --confirm or --paid.
+  &--reminder {
+    margin-top: 8px;
+    background: var(--rm-warning, #ed6c02);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(237, 108, 2, 0.28);
+  }
+
+  // Shared disabled state (currently only reached by --reminder during its 6-hour
+  // cooldown) — greyed out and inert, but stays visible so it's clear the reminder
+  // was sent and when it'll be available again is implied by the label.
+  &:disabled {
+    background: var(--rm-surface-alt);
+    color: var(--rm-text-secondary, #8a8a8a);
+    box-shadow: none;
+    cursor: not-allowed;
+
+    &:active {
+      transform: none;
+    }
+  }
 }
 
 /* ================================

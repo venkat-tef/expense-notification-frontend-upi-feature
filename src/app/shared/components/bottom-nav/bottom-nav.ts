@@ -18,7 +18,7 @@ interface NavItem {
 export class BottomNav {
   readonly items: NavItem[] = [
     { path: '/dashboard', label: 'Home', icon: 'home' },
-    { path: '/water', label: 'Water', icon: 'water_drop' },
+    // { path: '/water', label: 'Water', icon: 'water_drop' },
     { path: '/cooking', label: 'Garbage', icon: 'delete' },
     { path: '/inventory', label: 'Inventory', icon: 'kitchen' },
     //  { path: '/history', label: 'History', icon: 'history' },

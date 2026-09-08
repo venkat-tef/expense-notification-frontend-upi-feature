@@ -2,6 +2,7 @@ export type NotificationType =
   | 'expense' | 'member_joined' | 'skip' | 'announcement'
   | 'duty_water' | 'duty_garbage' | 'settlement'
   | 'settlement_completed' | 'settlement_ready'
+  | 'settlement_reminder' // NEW — approver's "Send Reminder" button on a member's still-owing settlement card
   | 'announcement_bell'; // NEW — bell-only, written server-side by the patched onAnnouncementCreated
 
 export interface AppNotification {

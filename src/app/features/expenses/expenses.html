@@ -214,6 +214,15 @@
                       <mat-icon>done</mat-icon>I've Paid
                     </button>
                   </div>
+                } @else if (canSendReminder(s.memberId)) {
+                  <button
+                    class="rm-upi-btn rm-upi-btn--reminder"
+                    [disabled]="reminderDisabled(s.memberId)"
+                    (click)="sendReminder(s)"
+                  >
+                    <mat-icon>notifications_active</mat-icon>
+                    {{ reminderDisabled(s.memberId) ? 'Reminder Sent' : (s.memberName + ' Split Reminder') }}
+                  </button>
                 }
               }
             }
