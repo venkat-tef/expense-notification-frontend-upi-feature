@@ -16,6 +16,8 @@ import { ExpenseService } from '../../core/services/expense.service';
 import { MonthlySummaryService } from '../../core/services/monthly-summary.service';
 import { AppNotification, NotificationType } from '../../core/models/notification.model';
 import { TransparentAvatarComponent } from './transparent-avatar.component';
+import { FestivalService } from '../../core/services/festival.service';
+import { FestivalBanner } from '../../shared/components/festival-banner/festival-banner';
 
 interface DashCard {
   path: string;
@@ -62,7 +64,7 @@ function currentMonthKey(): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatBadgeModule, TransparentAvatarComponent],
+  imports: [CommonModule, MatIconModule, MatBadgeModule, TransparentAvatarComponent, FestivalBanner],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -129,6 +131,23 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly bottomSheet = inject(MatBottomSheet);
   readonly notificationService = inject(NotificationService);
 
+  // ============================================================
+  // ADDITIVE — TODAY'S FESTIVAL (drives the thorana only)
+  // ============================================================
+  //
+  // The single shared FestivalService (also used internally by
+  // <app-festival-banner>) is the one source of festival/date truth in the
+  // app — no duplicate lookup table here. `primaryFestival` just decides
+  // whether today's thorana should also render its bells (only when the
+  // active festival's `decorations` list actually includes 'bells').
+  readonly festivalService = inject(FestivalService);
+
+  readonly primaryFestival = computed(() => this.festivalService.activeFestivals()[0]);
+
+  readonly thoranaHasBells = computed(
+    () => !!this.primaryFestival()?.decorations?.includes('bells')
+  );
+
   private resumeRetryTimeout?: ReturnType<typeof setTimeout>;
 
   /**
@@ -192,21 +211,39 @@ private readonly NAMED_AVATAR_VIDEOS: Record<string, string> = {
 private readonly DEFAULT_AVATAR_VIDEO = 'assets/avatars/default-hero.mp4';
 
 readonly avatarVideoUrl = computed(() => {
+  // FIX — wait for the member profile to actually load before deciding which
+  // avatar to show. `currentMember()` is legitimately undefined for a brief
+  // moment right after login (Firestore's members listener hasn't delivered
+  // its first snapshot yet), which used to be indistinguishable from "no
+  // matching member" and fell through to the generic default/guest avatar —
+  // then flipped to the real one a moment later. Returning undefined here
+  // while still loading means the template shows a neutral skeleton instead
+  // of the wrong avatar (see avatarReady + dashboard.html).
+  if (!this.avatarReady()) return undefined;
+
   const member = this.memberService.currentMember();
   const key = member?.name?.trim().toLowerCase();
 
   if (key && this.NAMED_AVATAR_VIDEOS[key]) return this.NAMED_AVATAR_VIDEOS[key];
   // Member has their own static photo — let avatarUrl() handle it, don't override.
   if (key && this.NAMED_AVATARS[key]) return undefined;
-  // Unknown member or nobody logged in — temporary default.
+  // Genuinely unknown member or nobody logged in (now that loading has finished) — default.
   return this.DEFAULT_AVATAR_VIDEO;
 });
 
 readonly avatarUrl = computed(() => {
+  if (!this.avatarReady()) return undefined;
   const member = this.memberService.currentMember();
   const key = member?.name?.trim().toLowerCase();
   return key ? this.NAMED_AVATARS[key] : undefined;
 });
+
+/**
+ * True once MemberService has delivered its first Firestore snapshot, so
+ * `currentMember()` can be trusted (undefined really does mean "no match"
+ * rather than "still loading"). See avatarVideoUrl/avatarUrl above.
+ */
+readonly avatarReady = computed(() => this.memberService.loaded());
 
 readonly avatarAlt = computed(() => {
   const name = this.memberService.currentMember()?.name ?? this.currentMemberName;

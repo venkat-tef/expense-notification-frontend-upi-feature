@@ -24,6 +24,7 @@
 .rm-brand {
   display: flex;
   align-items: center;
+  z-index: 1000;
 }
 
 .rm-brand__logo {
@@ -84,6 +85,49 @@
   font-weight: 800;
 }
 
+
+/* ============================================================
+   ADDITIVE — FESTIVAL THORANA
+   Rendered only on a festival day (see `@if (todayFestival())` in the
+   template) — on non-festival days the element isn't in the DOM at all,
+   so it occupies zero layout space. Pure CSS/SVG (no image asset),
+   so there is never a broken image, remote or local. Sits above the
+   header row and never overlaps the logo/bell/logout buttons.
+   ============================================================ */
+/* ============================================================
+   FESTIVAL THORANALU
+   ============================================================ */
+.rm-festival-thorana {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  width: 100%;
+
+
+  pointer-events: none;
+  overflow: hidden;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.rm-festival-thorana img {
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  max-width: 100%;
+  min-width: 0;
+
+  object-fit: contain;
+  object-position: top center;
+
+  pointer-events: none;
+}
 
 /* ============================================================
    WELCOME HERO
@@ -479,6 +523,39 @@
   animation: none !important;
 
   transition: none !important;
+}
+
+/* ============================================================
+   ADDITIVE — AVATAR LOADING SKELETON
+   Shown only while MemberService is loading its first Firestore
+   snapshot, so no wrong/default avatar ever flashes before the
+   real one is known — see avatarReady() in dashboard.ts.
+   ============================================================ */
+.rm-welcome-hero__avatar--skeleton {
+  width: 46%;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    100deg,
+    var(--rm-surface-alt) 30%,
+    color-mix(in srgb, var(--rm-surface-alt) 40%, var(--rm-border)) 50%,
+    var(--rm-surface-alt) 70%
+  );
+  background-size: 200% 100%;
+
+  animation: rm-avatar-skeleton-shimmer 1.4s ease-in-out infinite !important;
+}
+
+@keyframes rm-avatar-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-welcome-hero__avatar--skeleton {
+    animation: none !important;
+    background-position: 0 0;
+  }
 }
 
 
@@ -1373,4 +1450,3 @@
     z-index: 1;
   }
 }
-

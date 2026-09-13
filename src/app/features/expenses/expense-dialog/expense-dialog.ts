@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -99,7 +99,72 @@ export class ExpenseDialog {
     input.value = ''; // allow re-selecting the same file later
 
     if (!file) return;
+    this.handleIncomingFile(file);
+  }
 
+  // ============================================================
+  // ADDITIVE — PASTE IMAGE FROM CLIPBOARD
+  // ============================================================
+  //
+  // Two complementary paths, both funneling into the same validated
+  // handleIncomingFile():
+  //  1. A document-level `paste` listener — catches native Ctrl+V (desktop)
+  //     or the OS "Paste" action from a long-press context menu (mobile),
+  //     regardless of which field currently has focus. Only intercepts
+  //     when the clipboard actually contains an image, so normal text
+  //     pasting into Title/Notes/etc. is completely unaffected.
+  //  2. An explicit "Paste image" button using the async Clipboard API,
+  //     for browsers that support it (desktop Chrome/Edge, most Android
+  //     Chrome) — a more discoverable one-tap alternative to Ctrl+V.
+  //     Where unsupported (e.g. Safari), it just prompts the user to use
+  //     the native paste gesture instead, which path 1 then picks up.
+  @HostListener('document:paste', ['$event'])
+  onDocumentPaste(event: ClipboardEvent): void {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          event.preventDefault();
+          this.handleIncomingFile(file);
+        }
+        return;
+      }
+    }
+  }
+
+  private readonly clipboardReadSupported =
+    typeof navigator !== 'undefined' && typeof navigator.clipboard?.read === 'function';
+
+  /** Whether to show the explicit "Paste image" button at all — hidden where the API can't work. */
+  readonly canPasteViaButton = this.clipboardReadSupported;
+
+  async pasteFromClipboard(): Promise<void> {
+    if (!this.clipboardReadSupported) {
+      this.snackBar.open('Long-press (or press Ctrl+V) and choose Paste to add a copied image.', 'OK', { duration: 4000 });
+      return;
+    }
+
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const clipboardItem of clipboardItems) {
+        const imageType = clipboardItem.types.find((t) => t.startsWith('image/'));
+        if (imageType) {
+          const blob = await clipboardItem.getType(imageType);
+          const file = new File([blob], `pasted-image.${imageType.split('/')[1] ?? 'png'}`, { type: imageType });
+          this.handleIncomingFile(file);
+          return;
+        }
+      }
+      this.snackBar.open('No image found on the clipboard.', 'OK', { duration: 3000 });
+    } catch {
+      this.snackBar.open('Long-press (or press Ctrl+V) and choose Paste to add a copied image.', 'OK', { duration: 4000 });
+    }
+  }
+
+  private handleIncomingFile(file: File): void {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       this.snackBar.open('Only JPG, PNG, or WEBP images are allowed.', 'OK', { duration: 3000 });
       return;

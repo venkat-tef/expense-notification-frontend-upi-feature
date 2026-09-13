@@ -1,6 +1,25 @@
 <div class="rm-page rm-fade-in">
 
   <!-- ============================================================
+       ADDITIVE — FESTIVAL THORANA
+       Only rendered on a festival day (Asia/Kolkata). Zero layout
+       space and no DOM on non-festival days. Purely CSS/SVG — no
+       image asset, so it can never show a broken image.
+       ============================================================ -->
+  @if (festivalService.hasActiveFestival()) {
+    <div class="rm-festival-thorana" aria-hidden="true">
+    
+          <img
+    class="festival-thorana"
+    src="assets/mango.png"
+    alt=""
+    aria-hidden="true"
+  />
+      
+    </div>
+  }
+
+  <!-- ============================================================
        DASHBOARD HEADER
        ============================================================ -->
   <header class="rm-dash-header">
@@ -131,9 +150,19 @@
              DYNAMIC USER GIF / AVATAR
              Falls back to the default avatar artwork when the member
              has no photoUrl set. No animation applied.
+
+             FIX — while the member profile is still loading (avatarReady()
+             false), show a neutral skeleton instead of any avatar. Before
+             this, the generic/default avatar would flash briefly right
+             after login and then get replaced by the real one once
+             Firestore's member data arrived.
              ============================================================ -->
 
-       @if (avatarVideoUrl(); as avatarVideo) {
+       @if (!avatarReady()) {
+
+  <div class="rm-welcome-hero__avatar rm-welcome-hero__avatar--skeleton" aria-hidden="true"></div>
+
+} @else if (avatarVideoUrl(); as avatarVideo) {
 
   <app-transparent-avatar
     class="rm-welcome-hero__avatar"
@@ -167,6 +196,15 @@
     </section>
 
   </header>
+
+
+  <!-- ============================================================
+       ADDITIVE — FESTIVAL WISHES BANNER (reusable component)
+       Renders nothing itself when there's no active/upcoming festival —
+       see shared/components/festival-banner. Sits between the hero and
+       the existing quick-action cards.
+       ============================================================ -->
+  <app-festival-banner></app-festival-banner>
 
 
   <!-- ============================================================

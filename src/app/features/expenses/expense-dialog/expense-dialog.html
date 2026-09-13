@@ -69,13 +69,21 @@
         </button>
       </div>
     } @else {
-      <label class="rm-expense-form__upload">
-        <mat-icon>upload</mat-icon>
-        Upload photo
-        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" (change)="onFileSelected($event)" hidden />
-      </label>
+      <div class="rm-expense-form__image-actions">
+        <label class="rm-expense-form__upload">
+          <mat-icon>upload</mat-icon>
+          Upload photo
+          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" (change)="onFileSelected($event)" hidden />
+        </label>
+        @if (canPasteViaButton) {
+          <button type="button" class="rm-expense-form__paste" (click)="pasteFromClipboard()">
+            <mat-icon>content_paste</mat-icon>
+            Paste image
+          </button>
+        }
+      </div>
     }
-    <span class="rm-expense-form__hint">JPG, PNG, or WEBP · up to 5 MB</span>
+    <span class="rm-expense-form__hint">JPG, PNG, or WEBP · up to 5 MB · or paste a copied image (Ctrl+V)</span>
   </div>
 </div>
 
