@@ -185,15 +185,36 @@ export class SettlementPaymentService {
     amount: number,
     note: string
   ): string {
-    const params = new URLSearchParams({
+    // FIX — URLSearchParams encodes spaces as '+', not '%20'. PhonePe (and some other
+    // UPI apps) do not reliably decode '+' back into a space when parsing the intent,
+    // so `pn`/`tn` values containing spaces (payee names, "Nestly Settlement - Sept
+    // 2026") arrived at PhonePe looking altered/garbled — which is exactly what was
+    // triggering "your payment is declined for security reasons, please try using a
+    // mobile number/UPI ID/QR code". Manual entry in the PhonePe app never hit this
+    // because no such string is ever built there. encodeURIComponent always produces
+    // %20, which every UPI app parses correctly.
+    //
+    // Also added `tr` — a unique transaction reference per payment attempt, required
+    // by the NPCI UPI intent spec and increasingly enforced by PhonePe's fraud checks.
+    // Without it, every link generated for the same approver + amount + note was
+    // byte-for-byte identical across attempts, which can itself be flagged as a
+    // suspicious static/replayed intent rather than a fresh legitimate payment.
+    const tr = `NESTLY${Date.now()}`;
+
+    const parts: Record<string, string> = {
       pa: upiId,
       pn: payeeName,
       am: amount.toFixed(2),
       cu: 'INR',
       tn: note,
-    });
+      tr,
+    };
 
-    return `upi://pay?${params.toString()}`;
+    const query = Object.entries(parts)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+
+    return `upi://pay?${query}`;
   }
 
   /**

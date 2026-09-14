@@ -1,150 +1,226 @@
 @if (current(); as item) {
-<section
-  class="fb-banner"
-  [class.fb-banner--with-dots]="showDots()"
-  role="region"
-  [attr.aria-label]="item.festival.name + ' festival wishes'"
-  (touchstart)="onTouchStart($event)"
-  (touchend)="onTouchEnd($event)"
->
 
-    <!-- FESTIVAL DECORATION LAYER -->
-    <div class="fb-banner__decor" aria-hidden="true">
+  <section
+    class="fb-banner"
+    [class.fb-banner--with-dots]="showDots()"
+    role="region"
+    [attr.aria-label]="item.festival.name + ' festival wishes'"
+    (touchstart)="onTouchStart($event)"
+    (touchend)="onTouchEnd($event)"
+  >
 
-      <span class="fb-leaf fb-leaf--1"></span>
-      <span class="fb-leaf fb-leaf--2"></span>
-      <span class="fb-leaf fb-leaf--3"></span>
-      <span class="fb-leaf fb-leaf--4"></span>
-
-      <span class="fb-flower fb-flower--1">✿</span>
-      <span class="fb-flower fb-flower--2">✿</span>
-
-      <span class="fb-spark fb-spark--1">✦</span>
-      <span class="fb-spark fb-spark--2">✧</span>
-
-      @if (hasDecoration('bells')) {
-        <span class="fb-bell fb-bell--1">🔔</span>
-        <span class="fb-bell fb-bell--2">🔔</span>
-      }
-
-      @if (hasDecoration('lamps')) {
-        <span class="fb-diya fb-diya--1">🪔</span>
-        <span class="fb-diya fb-diya--2">🪔</span>
-      }
-    </div>
-
-    <!-- FESTIVAL ARTWORK -->
-<!-- FESTIVAL ARTWORK -->
-<div class="fb-banner__art">
-
-  @if (item.festival.image) {
-
-    <img
-      class="fb-banner__art-img"
-      [src]="item.festival.image"
-      [alt]="item.festival.name + ' artwork'"
-      loading="eager"
-      decoding="async"
-    />
-
-  } @else if (currentArtworkUrl(); as url) {
-
-    <img
-      class="fb-banner__art-img"
-      [src]="url"
-      [alt]="item.festival.name + ' artwork'"
-      loading="eager"
-      decoding="async"
-      (error)="onArtworkError()"
-    />
-
-  } @else {
+    <!-- ============================================================
+         DECORATION
+         Uses Nestly theme through CSS.
+         Festival data controls only the content/artwork.
+         ============================================================ -->
 
     <div
-      class="fb-banner__art-fallback"
-      role="img"
-      [attr.aria-label]="item.festival.name + ' artwork'"
+      class="fb-banner__decor"
+      aria-hidden="true"
     >
+      <span
+        class="fb-leaf fb-leaf--1"
+      ></span>
 
-      <span class="fb-banner__art-glow"></span>
+      <span
+        class="fb-leaf fb-leaf--2"
+      ></span>
 
-      <mat-icon class="fb-banner__art-icon">
-        {{ currentIcon() }}
-      </mat-icon>
+      <span
+        class="fb-leaf fb-leaf--3"
+      ></span>
 
-      <span class="fb-banner__art-emoji">
-        {{ item.festival.emoji }}
+      <span
+        class="fb-leaf fb-leaf--4"
+      ></span>
+
+      <span
+        class="fb-flower fb-flower--1"
+      >
+        ✿
       </span>
+
+      <span
+        class="fb-flower fb-flower--2"
+      >
+        ✿
+      </span>
+
+      <span
+        class="fb-spark fb-spark--1"
+      >
+        ✦
+      </span>
+
+      <span
+        class="fb-spark fb-spark--2"
+      >
+        ✧
+      </span>
+    </div>
+
+
+    <!-- ============================================================
+         GOD / FESTIVAL PNG
+         ============================================================ -->
+
+    <div class="fb-banner__art">
+
+      @if (currentArtworkUrl(); as url) {
+
+        <img
+          class="fb-banner__art-img"
+          [src]="url"
+          [alt]="item.festival.name + ' deity artwork'"
+          loading="eager"
+          decoding="async"
+          (error)="onArtworkError()"
+        />
+
+      } @else {
+
+        <!-- Safe fallback when no verified PNG exists -->
+        <div
+          class="fb-banner__art-fallback"
+          role="img"
+          [attr.aria-label]="item.festival.name + ' artwork'"
+        >
+
+          <span
+            class="fb-banner__art-glow"
+            aria-hidden="true"
+          ></span>
+
+          <mat-icon
+            class="fb-banner__art-icon"
+            aria-hidden="true"
+          >
+            {{ currentIcon() }}
+          </mat-icon>
+
+        </div>
+
+      }
 
     </div>
 
-  }
 
-</div>
+    <!-- ============================================================
+         TEXT
+         ============================================================ -->
 
-    <!-- TEXT -->
     <div class="fb-banner__body">
 
       <span class="fb-banner__badge">
-        <mat-icon>
-          {{ item.upcoming ? 'schedule' : 'auto_awesome' }}
+
+        <mat-icon
+          aria-hidden="true"
+        >
+          auto_awesome
         </mat-icon>
 
-        {{ item.upcoming ? 'Coming Soon' : 'Festival Wishes' }}
+        Festival Wishes
+
       </span>
+
 
       <h3 class="fb-banner__title">
         {{ item.festival.teluguGreeting }}
       </h3>
 
+
       <p class="fb-banner__english">
         {{ item.festival.greeting }}
       </p>
 
+
       @if (item.festival.ctaLabel) {
+
         <a
           class="fb-banner__cta"
           [href]="item.festival.ctaLink || '#'"
         >
+
           {{ item.festival.ctaLabel }}
 
-          <mat-icon>
+          <mat-icon
+            aria-hidden="true"
+          >
             arrow_forward
           </mat-icon>
+
         </a>
+
       }
 
     </div>
 
-    <!-- DECORATIVE RIGHT SIDE -->
-    <div class="fb-banner__right-art" aria-hidden="true">
-      <span class="fb-right-leaf fb-right-leaf--1"></span>
-      <span class="fb-right-leaf fb-right-leaf--2"></span>
+
+    <!-- ============================================================
+         RIGHT DECORATION
+         ============================================================ -->
+
+    <div
+      class="fb-banner__right-art"
+      aria-hidden="true"
+    >
+
+      <span
+        class="fb-right-leaf fb-right-leaf--1"
+      ></span>
+
+      <span
+        class="fb-right-leaf fb-right-leaf--2"
+      ></span>
 
       <span class="fb-right-flower">
         ✿
       </span>
+
     </div>
 
+
+    <!-- ============================================================
+         MULTIPLE FESTIVALS ON SAME DAY
+         ============================================================ -->
+
     @if (showDots()) {
+
       <div
         class="fb-banner__dots"
         role="tablist"
         aria-label="Select festival"
       >
-        @for (it of items(); track it.festival.id; let i = $index) {
+
+        @for (
+          it of items();
+          track it.festival.id;
+          let i = $index
+        ) {
+
           <button
             type="button"
             class="fb-banner__dot"
-            [class.fb-banner__dot--active]="i === activeIndex()"
+            [class.fb-banner__dot--active]="
+              i === activeIndex()
+            "
             role="tab"
-            [attr.aria-selected]="i === activeIndex()"
-            [attr.aria-label]="'Show ' + it.festival.name"
+            [attr.aria-selected]="
+              i === activeIndex()
+            "
+            [attr.aria-label]="
+              'Show ' + it.festival.name
+            "
             (click)="goTo(i)"
           ></button>
+
         }
+
       </div>
+
     }
 
   </section>
+
 }

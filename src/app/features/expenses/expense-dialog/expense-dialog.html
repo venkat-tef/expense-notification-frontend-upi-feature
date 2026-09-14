@@ -73,7 +73,7 @@
         <label class="rm-expense-form__upload">
           <mat-icon>upload</mat-icon>
           Upload photo
-          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" (change)="onFileSelected($event)" hidden />
+          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif" (change)="onFileSelected($event)" hidden />
         </label>
         @if (canPasteViaButton) {
           <button type="button" class="rm-expense-form__paste" (click)="pasteFromClipboard()">
@@ -83,7 +83,7 @@
         }
       </div>
     }
-    <span class="rm-expense-form__hint">JPG, PNG, or WEBP · up to 5 MB · or paste a copied image (Ctrl+V)</span>
+    <span class="rm-expense-form__hint">JPG, PNG, WEBP, HEIC, or HEIF · up to 5 MB · or paste a copied image (Ctrl+V)</span>
   </div>
 </div>
 

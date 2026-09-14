@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal, NgZone, effect } from '@angular/core';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
 import {
@@ -31,6 +31,7 @@ export class MemberService {
   private readonly auth = inject(AuthService);
   private readonly notifications = inject(NotificationService);
   private readonly cloudinary = inject(CloudinaryService);
+  private readonly zone = inject(NgZone);
 
   readonly members = signal<Member[]>([]);
   readonly loaded = signal(false);
@@ -72,7 +73,35 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
   });
 
   constructor() {
-    this.listen();
+    // IMPORTANT — do NOT call listen() unconditionally here.
+    //
+    // MemberService is constructed the instant it's first injected — which happens as
+    // soon as the Login component loads, i.e. WHILE THE USER IS STILL UNAUTHENTICATED.
+    // Firestore security rules require request.auth != null, so attaching onSnapshot()
+    // before login completes causes an immediate 'permission-denied' error. That error
+    // gets caught, `loaded` is set true, and whenLoaded() resolves PERMANENTLY with an
+    // empty member list — and Firestore does NOT auto-retry a listener that died from a
+    // permission error, even seconds later once the user actually logs in. This was the
+    // exact cause of members/dashboard showing empty on a fresh device/first login.
+    //
+    // Fix: only attach the listener once we actually have an authenticated user, and
+    // re-attach whenever the user changes (covers login, logout, and account switching).
+    effect(() => {
+      const user = this.auth.user();
+
+      // Tear down any existing listener first — either the user logged out, or a
+      // different user just logged in, so the old subscription is no longer valid.
+      this.unsubscribe?.();
+      this.unsubscribe = null;
+
+      if (!user) {
+        // Not authenticated yet (auth still restoring) or logged out — don't listen.
+        this.members.set([]);
+        return;
+      }
+
+      this.listen();
+    }, { allowSignalWrites: true });
   }
 
   /** Resolves once the first realtime snapshot has come back (or errored). */
@@ -82,44 +111,54 @@ readonly rotationEligibleMembers = computed<Member[]>(() =>
 
   private listen(): void {
     const q = query(collection(firestoreDb, COLLECTION), orderBy('order', 'asc'));
+
+    // Same reasoning as AuthService.onAuthStateChanged: Firestore's onSnapshot dispatch
+    // (IndexedDB-backed cache/persistence under the hood) isn't reliably zone-patched on
+    // every browser/WebView — notably mobile Safari and installed-PWA standalone mode.
+    // Without wrapping in zone.run(), `members`/`loaded` update correctly but Angular
+    // doesn't always repaint.
     this.unsubscribe = onSnapshot(
       q,
       (snap) => {
-        const list: Member[] = snap.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            name: data['name'],
-            order: data['order'] ?? 0,
-            createdAt: data['createdAt']?.toMillis?.() ?? Date.now(),
-            // New optional fields — existing docs without them simply come back as undefined,
-            // so old members keep working exactly as before everywhere else in the app.
-            uid: data['uid'],
-            email: data['email'],
-            phone: data['phone'],
-            role: data['role'],
-            status: data['status'],
-            upiId: data['upiId'] ?? undefined,
-            isPaymentApprover: data['isPaymentApprover'] ?? undefined,
-            // Profile photo — undefined/missing simply means "no photo" everywhere it's
-            // read, so every existing member without one keeps showing initials exactly
-            // as before.
-            photoUrl: data['photoUrl'] ?? undefined,
-            photoPath: data['photoPath'] ?? undefined,
-            photoPublicId: data['photoPublicId'] ?? undefined,
-            // Missing/undefined MUST mean enabled — every existing reader of this field
-            // (MembersTab, pushService.js) treats undefined the same as `true`.
-            notificationsEnabled: data['notificationsEnabled'] ?? undefined,
-          };
+        this.zone.run(() => {
+          const list: Member[] = snap.docs.map((d) => {
+            const data = d.data() as any;
+            return {
+              id: d.id,
+              name: data['name'],
+              order: data['order'] ?? 0,
+              createdAt: data['createdAt']?.toMillis?.() ?? Date.now(),
+              // New optional fields — existing docs without them simply come back as undefined,
+              // so old members keep working exactly as before everywhere else in the app.
+              uid: data['uid'],
+              email: data['email'],
+              phone: data['phone'],
+              role: data['role'],
+              status: data['status'],
+              upiId: data['upiId'] ?? undefined,
+              isPaymentApprover: data['isPaymentApprover'] ?? undefined,
+              // Profile photo — undefined/missing simply means "no photo" everywhere it's
+              // read, so every existing member without one keeps showing initials exactly
+              // as before.
+              photoUrl: data['photoUrl'] ?? undefined,
+              photoPath: data['photoPath'] ?? undefined,
+              photoPublicId: data['photoPublicId'] ?? undefined,
+              // Missing/undefined MUST mean enabled — every existing reader of this field
+              // (MembersTab, pushService.js) treats undefined the same as `true`.
+              notificationsEnabled: data['notificationsEnabled'] ?? undefined,
+            };
+          });
+          this.members.set(list);
+          this.loaded.set(true);
+          this.loadedResolve();
         });
-        this.members.set(list);
-        this.loaded.set(true);
-        this.loadedResolve();
       },
       (err) => {
-        console.error('members onSnapshot error', err);
-        this.loaded.set(true);
-        this.loadedResolve();
+        this.zone.run(() => {
+          console.error('members onSnapshot error', err);
+          this.loaded.set(true);
+          this.loadedResolve();
+        });
       }
     );
   }

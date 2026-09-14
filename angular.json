@@ -39,6 +39,11 @@
                 "output": "/"
               },
               {
+                "glob": "share-target-sw.js",
+                "input": "public",
+                "output": "/"
+              },
+              {
                 "glob": "**/*",
                 "input": "public/icons",
                 "output": "/icons"

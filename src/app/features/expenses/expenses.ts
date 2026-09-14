@@ -4,9 +4,12 @@ import {
   inject,
   signal,
   Inject,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import * as QRCode from 'qrcode';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -41,6 +44,7 @@ import {
 } from './expense-dialog/expense-dialog';
 
 import { ImagePreviewDialog } from './image-preview-dialog/image-preview-dialog';
+import { PendingSharedImageService } from '../../core/services/pending-shared-image.service';
 
 
 function currentMonthKey(): string {
@@ -78,9 +82,9 @@ function formatMonthLabel(monthKey: string): string {
  * iOS UPI APP PICKER
  * ------------------------------------------------------------
  *
- * This dialog is ONLY used on iPhone/iPad.
- *
- * Android keeps the existing generic `upi://pay` flow.
+ * Used from UpiQrPaymentDialog's "Open UPI App Instead" button when on
+ * iPhone/iPad, since iOS does not reliably give the Android-style chooser
+ * for a generic upi://pay URL.
  *
  * The dialog simply returns which UPI app the user selected.
  */
@@ -327,6 +331,276 @@ export class UpiAppPickerDialog {
 
 /**
  * ------------------------------------------------------------
+ * UPI QR PAYMENT DIALOG (NEW — primary payment flow)
+ * ------------------------------------------------------------
+ *
+ * WHY THIS EXISTS:
+ * PhonePe (and increasingly other UPI apps) actively blocks generic
+ * `upi://pay` deep links opened FROM A BROWSER/PWA for peer-to-peer
+ * transfers, as a fraud measure against phishing payment links. This is
+ * a deliberate policy decision on their end, not a bug in how we built
+ * the link — manual "Send Money" inside the PhonePe app never hits this
+ * check at all. The error PhonePe shows literally tells the user the
+ * sanctioned alternative: "please try using a mobile number, UPI ID, or
+ * QR code."
+ *
+ * So this dialog leads with exactly those two officially-suggested paths:
+ *   1. A scannable UPI QR code (same payment params, rendered as an image
+ *      instead of a deep link — scanning is treated as a trusted flow).
+ *   2. The payee's UPI ID with one-tap copy, for manual entry.
+ *
+ * The old direct-deep-link behavior (Android generic link / iOS app
+ * picker) is kept as a secondary "Open UPI App Instead" option, since
+ * apps other than PhonePe (GPay, Paytm, etc.) may still open it fine.
+ */
+interface UpiQrPaymentDialogData {
+  link: string;
+  upiId: string;
+  payeeName: string;
+  amount: number;
+  note: string;
+  isIOS: boolean;
+}
+
+@Component({
+  standalone: true,
+
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatDialogModule,
+  ],
+
+  template: `
+  <h2 mat-dialog-title class="upi-qr-title">Pay via UPI</h2>
+
+  <mat-dialog-content class="upi-qr-content">
+    <div class="upi-qr-amount">₹{{ data.amount.toFixed(2) }}</div>
+    <div class="upi-qr-payee">to {{ data.payeeName }}</div>
+
+    <div class="upi-qr-image-wrap">
+      @if (qrDataUrl()) {
+        <img [src]="qrDataUrl()!" alt="UPI QR code" class="upi-qr-image" />
+      } @else {
+        <div class="upi-qr-placeholder">Generating QR…</div>
+      }
+    </div>
+
+    <p class="upi-qr-hint">Scan this with your UPI app's camera to pay.</p>
+
+    <div class="upi-qr-id-row">
+      <span class="upi-qr-id">{{ data.upiId }}</span>
+      <button
+        mat-icon-button
+        type="button"
+        (click)="copyUpiId()"
+        aria-label="Copy UPI ID"
+      >
+        <mat-icon>content_copy</mat-icon>
+      </button>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="upi-qr-actions">
+    <button mat-button type="button" (click)="close()">Cancel</button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="openDirectly()"
+    >
+      Open UPI App Instead
+    </button>
+  </mat-dialog-actions>
+`,
+
+  styles: [`
+:host {
+  display: block;
+}
+
+.upi-qr-title {
+  color: var(--rm-text);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  padding: 4px 0 2px;
+  text-align: center;
+}
+
+.upi-qr-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 8px !important;
+  min-width: 260px;
+}
+
+.upi-qr-amount {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--rm-text);
+  margin-top: 4px;
+}
+
+.upi-qr-payee {
+  font-size: 13.5px;
+  color: var(--rm-text-muted);
+  margin-bottom: 10px;
+}
+
+.upi-qr-image-wrap {
+  width: 220px;
+  height: 220px;
+  border-radius: var(--rm-radius-md, 14px);
+  border: 1px solid var(--rm-border);
+  background: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.upi-qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.upi-qr-placeholder {
+  font-size: 13px;
+  color: var(--rm-text-muted);
+}
+
+.upi-qr-hint {
+  font-size: 12.5px;
+  color: var(--rm-text-muted);
+  margin: 10px 0 6px;
+  text-align: center;
+}
+
+.upi-qr-id-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 10px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--rm-border);
+  background: var(--rm-surface-alt);
+}
+
+.upi-qr-id {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rm-text);
+}
+
+.upi-qr-actions {
+  padding: 8px 4px 4px !important;
+}
+`],
+})
+export class UpiQrPaymentDialog implements OnInit {
+
+  private readonly dialogRef =
+    inject(MatDialogRef<UpiQrPaymentDialog>);
+
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+
+  readonly data: UpiQrPaymentDialogData =
+    inject(MAT_DIALOG_DATA);
+
+  readonly qrDataUrl = signal<string | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    try {
+      const dataUrl = await QRCode.toDataURL(this.data.link, {
+        width: 240,
+        margin: 1,
+      });
+
+      this.qrDataUrl.set(dataUrl);
+    } catch (err) {
+      console.error('Failed to generate UPI QR code', err);
+    }
+  }
+
+  async copyUpiId(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.data.upiId);
+
+      this.snackBar.open('UPI ID copied.', undefined, {
+        duration: 1800,
+      });
+    } catch {
+      this.snackBar.open(
+        'Could not copy — please copy manually.',
+        'OK',
+        { duration: 2500 }
+      );
+    }
+  }
+
+  /**
+   * Secondary path — the old direct deep-link behavior. Still useful for
+   * UPI apps other than PhonePe that don't block browser-initiated links.
+   */
+  openDirectly(): void {
+    if (!this.data.isIOS) {
+      window.location.href = this.data.link;
+      this.dialogRef.close();
+      return;
+    }
+
+    const pickerRef = this.dialog.open(UpiAppPickerDialog, {
+      width: '340px',
+      maxWidth: '90vw',
+      autoFocus: false,
+    });
+
+    pickerRef.afterClosed().subscribe(
+      (
+        selectedApp:
+          | 'gpay'
+          | 'phonepe'
+          | 'paytm'
+          | 'bhim'
+          | 'cred'
+          | undefined
+      ) => {
+        if (!selectedApp) {
+          return;
+        }
+
+        const query = this.data.link.replace(/^upi:\/\/pay\?/, '');
+
+        const schemeMap: Record<string, string> = {
+          gpay: `gpay://upi/pay?${query}`,
+          phonepe: `phonepe://pay?${query}`,
+          paytm: `paytmmp://pay?${query}`,
+          bhim: `bhim://pay?${query}`,
+          cred: `cred://pay?${query}`,
+        };
+
+        window.location.href = schemeMap[selectedApp] ?? this.data.link;
+        this.dialogRef.close();
+      }
+    );
+  }
+
+  close(): void {
+    this.dialogRef.close();
+  }
+}
+
+
+/**
+ * ------------------------------------------------------------
  * EXPENSES
  * ------------------------------------------------------------
  */
@@ -348,7 +622,7 @@ export class UpiAppPickerDialog {
   templateUrl: './expenses.html',
   styleUrl: './expenses.scss',
 })
-export class Expenses {
+export class Expenses implements OnInit {
 
   readonly memberService =
     inject(MemberService);
@@ -367,6 +641,15 @@ export class Expenses {
 
   private readonly snackBar =
     inject(MatSnackBar);
+
+  private readonly route =
+    inject(ActivatedRoute);
+
+  private readonly router =
+    inject(Router);
+
+  private readonly pendingSharedImage =
+    inject(PendingSharedImageService);
 
 
   readonly categoryIcons =
@@ -720,10 +1003,57 @@ export class Expenses {
 
 
   // ==========================================================
+  // SHARE TARGET (Android "Share to Nestly" from Gallery/Photos)
+  // ==========================================================
+
+  /**
+   * public/share-target-sw.js redirects here (`/expenses?shared=1`) after
+   * stashing a shared image in IndexedDB. The `shared=1` param is just a
+   * hint — the actual check (pull the pending image out of IndexedDB, if
+   * any) always runs when this page loads, because the `authGuard` redirect
+   * to /login on a cold, logged-out start does not preserve query params.
+   * PendingSharedImageService.takePendingImage() is cheap and safe to call
+   * unconditionally: it resolves to null (and does nothing further here)
+   * whenever there's nothing pending, or it's missing/invalid/stale, so a
+   * normal visit to Expenses is unaffected.
+   */
+  ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      if (params.get('shared') === '1') {
+        // Strip the param immediately (replaceUrl, no history entry) so a
+        // page refresh can't re-trigger anything from a stale URL.
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true,
+        });
+      }
+    });
+
+    this.handleSharedImageIntent();
+  }
+
+  private async handleSharedImageIntent(): Promise<void> {
+    const file = await this.pendingSharedImage.takePendingImage();
+
+    // Nothing usable was actually shared (missing/invalid/stale) — do
+    // nothing further; the app has just opened normally.
+    if (!file) {
+      return;
+    }
+
+    // Members may still be loading when a cold app-start lands here; wait
+    // for the same data openAddExpense() itself depends on.
+    await this.memberService.whenLoaded();
+
+    this.openAddExpense(file);
+  }
+
+  // ==========================================================
   // ADD EXPENSE
   // ==========================================================
 
-  openAddExpense(): void {
+  openAddExpense(initialFile?: File): void {
     if (
       !this.memberService.members().length
     ) {
@@ -744,6 +1074,8 @@ export class Expenses {
 
       monthKey:
         this.selectedMonth(),
+
+      initialFile,
     };
 
     const ref =
@@ -1085,15 +1417,16 @@ canSendReminder(
   /**
    * Opens UPI payment.
    *
-   * IMPORTANT:
+   * PRIMARY FLOW (both Android and iOS): show UpiQrPaymentDialog — a
+   * scannable QR code plus one-tap "copy UPI ID". This matches exactly
+   * what PhonePe's own decline message tells users to do instead of a
+   * browser-initiated `upi://pay` deep link ("please try using a mobile
+   * number, UPI ID, or QR code"), and sidesteps their fraud check on
+   * generic web-invoked payment links entirely.
    *
-   * Android:
-   *   Existing generic `upi://pay` behavior is preserved.
-   *
-   * iOS:
-   *   We show our own UPI app picker first.
-   *
-   * No other expense/settlement logic is changed.
+   * The dialog itself still offers "Open UPI App Instead" as a secondary
+   * path (Android generic link / iOS app picker), for UPI apps that don't
+   * impose this restriction.
    */
   payViaUpi(
     s: MemberSettlement
@@ -1119,16 +1452,6 @@ canSendReminder(
         this.selectedMonth()
       )}`;
 
-    /*
-     * IMPORTANT:
-     *
-     * This is the EXACT same generic UPI link
-     * your application was already creating.
-     *
-     * We do not modify the amount.
-     * We do not modify the UPI ID.
-     * We do not modify the note.
-     */
     const link =
       this.paymentService.buildUpiLink(
         approver.upiId,
@@ -1137,76 +1460,19 @@ canSendReminder(
         note
       );
 
-
-    // --------------------------------------------------------
-    // ANDROID / NON-iOS
-    // --------------------------------------------------------
-
-    if (!this.isIOS()) {
-      /*
-       * EXISTING BEHAVIOR.
-       *
-       * Do not change Android.
-       */
-      window.location.href = link;
-
-      return;
-    }
-
-
-    // --------------------------------------------------------
-    // iOS
-    // --------------------------------------------------------
-
-    /*
-     * iOS does not reliably give the Android-style
-     * chooser for a generic upi://pay URL.
-     *
-     * Therefore show our own chooser.
-     */
-    const dialogRef =
-      this.dialog.open(
-        UpiAppPickerDialog,
-        {
-          width: '340px',
-          maxWidth: '90vw',
-
-          autoFocus: false,
-        }
-      );
-
-
-    dialogRef.afterClosed().subscribe(
-      (
-        selectedApp:
-          | 'gpay'
-          | 'phonepe'
-          | 'paytm'
-          | 'bhim'
-          | 'cred'
-          | undefined
-      ) => {
-
-        if (!selectedApp) {
-          return;
-        }
-
-        const appLink =
-          this.buildIOSUpiLink(
-            link,
-            selectedApp
-          );
-
-        /*
-         * Open only the selected UPI app.
-         *
-         * The generic upi://pay link is NOT opened
-         * on iOS, so it cannot fall through to WhatsApp.
-         */
-        window.location.href =
-          appLink;
-      }
-    );
+    this.dialog.open(UpiQrPaymentDialog, {
+      data: {
+        link,
+        upiId: approver.upiId,
+        payeeName: approver.name,
+        amount: s.remaining,
+        note,
+        isIOS: this.isIOS(),
+      } as UpiQrPaymentDialogData,
+      width: '360px',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
 
@@ -1238,70 +1504,6 @@ canSendReminder(
       iosDevice ||
       iPadOS
     );
-  }
-
-
-  // ==========================================================
-  // BUILD APP-SPECIFIC iOS UPI LINK
-  // ==========================================================
-
-  private buildIOSUpiLink(
-    genericLink: string,
-    app:
-      | 'gpay'
-      | 'phonepe'
-      | 'paytm'
-      | 'bhim'
-      | 'cred'
-  ): string {
-
-    /*
-     * The payment parameters were already generated
-     * by SettlementPaymentService.
-     *
-     * Example:
-     *
-     * upi://pay?pa=xxx&pn=xxx&am=100&cu=INR&tn=xxx
-     *
-     * We only replace the scheme.
-     */
-    const query =
-      genericLink.replace(
-        /^upi:\/\/pay\?/,
-        ''
-      );
-
-
-    switch (app) {
-
-      case 'gpay':
-        return `gpay://upi/pay?${query}`;
-
-
-      case 'phonepe':
-        return `phonepe://pay?${query}`;
-
-
-      case 'paytm':
-        return `paytmmp://pay?${query}`;
-
-
-      case 'bhim':
-        return `bhim://pay?${query}`;
-
-      case 'cred':
-        return `cred://pay?${query}`;
-
-
-      default:
-        /*
-         * Safety fallback.
-         *
-         * This should never be reached because
-         * the picker only returns known values.
-         */
-        return genericLink;
-    }
   }
 
 

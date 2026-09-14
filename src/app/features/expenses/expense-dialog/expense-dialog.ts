@@ -18,12 +18,31 @@ export interface ExpenseDialogData {
   monthKey: string;
   /** Present when editing an existing expense; absent when adding a new one. */
   expense?: Expense;
+  /**
+   * Present when this dialog is being opened from an incoming Web Share
+   * Target image (see PendingSharedImageService) — attached automatically
+   * on open via the exact same validated path as a manually-picked or
+   * pasted file (handleIncomingFile), so it previews, can be removed/
+   * replaced, and uploads on save exactly like any other selection.
+   */
+  initialFile?: File;
 }
 
 export type ExpenseDialogResult = ExpenseInput;
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+// HEIC/HEIF included for iOS photo-picker shares/uploads — not every browser
+// can render them in the <img> preview, but they're still valid, uploadable
+// files wherever the device/browser provides them (requirement: support
+// JPEG/PNG/WebP/HEIC/HEIF "where the browser/device provides them").
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+];
 
 function todayDateKey(): string {
   const d = new Date();
@@ -85,6 +104,16 @@ export class ExpenseDialog {
 
   readonly saving = signal(false);
   readonly errors = signal<Record<string, string>>({});
+
+  constructor() {
+    // Auto-attach a shared image, if this dialog was opened from a Web Share
+    // Target intent. Routed through the exact same validated path
+    // (handleIncomingFile) as a manually-picked or pasted file, so it
+    // previews/removes/replaces/uploads identically — no separate code path.
+    if (this.data.initialFile) {
+      this.handleIncomingFile(this.data.initialFile);
+    }
+  }
 
   /** Name shown in the read-only "Paid By" field for non-admins. */
   get selfMemberName(): string {
@@ -166,7 +195,7 @@ export class ExpenseDialog {
 
   private handleIncomingFile(file: File): void {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      this.snackBar.open('Only JPG, PNG, or WEBP images are allowed.', 'OK', { duration: 3000 });
+      this.snackBar.open('Only JPG, PNG, WEBP, HEIC, or HEIF images are allowed.', 'OK', { duration: 3000 });
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
