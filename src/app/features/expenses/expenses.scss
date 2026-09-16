@@ -720,3 +720,452 @@
     background: var(--rm-surface-alt);
   }
 }
+
+/* =========================================================
+   SETTLEMENT WAITING CHARACTER
+   Left avatar animation + static right-side artwork
+   ========================================================= */
+
+.rm-waiting-card--animated {
+  position: relative;
+  overflow: hidden;
+  min-height: 330px;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: var(--rm-surface);
+}
+
+/* Main two-column stage.
+   LEFT  = animated character
+   RIGHT = completely static artwork */
+.rm-waiting-stage {
+  position: relative;
+  width: 100%;
+  height: 330px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 48% 52%;
+  align-items: stretch;
+  isolation: isolate;
+}
+
+/* =========================================================
+   LEFT AVATAR AREA
+   ========================================================= */
+
+.rm-avatar-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Soft ground shadow under the character. */
+.rm-avatar-stage::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 17px;
+  width: 190px;
+  height: 25px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(55, 76, 50, .12);
+  filter: blur(9px);
+  animation: rm-avatar-shadow 14s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* All four avatar files occupy exactly the same position.
+   CSS only changes opacity/transform so the artwork itself swaps cleanly. */
+.rm-avatar {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 12px;
+  width: min(285px, 100%);
+  height: 260px;
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translateX(-50%) translateY(0) scale(1);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
+}
+
+/* 1. Sitting / waiting */
+.rm-avatar--idle {
+  animation: rm-avatar-idle 14s ease-in-out infinite;
+}
+
+/* 2. Comes out / waves */
+.rm-avatar--hi {
+  animation: rm-avatar-hi 14s cubic-bezier(.2, .8, .2, 1) infinite;
+}
+
+/* 3. Looks toward user / talks */
+.rm-avatar--talk {
+  animation: rm-avatar-talk 14s ease-in-out infinite;
+}
+
+/* 4. Returns to original position */
+.rm-avatar--back {
+  animation: rm-avatar-back 14s cubic-bezier(.2, .8, .2, 1) infinite;
+}
+
+/* =========================================================
+   RIGHT SIDE
+   STATIC — NO ANIMATION
+   ========================================================= */
+
+.rm-settlement-right {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 3;
+}
+
+.rm-settlement-right__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* =========================================================
+   OPTIONAL OLD SPEECH ELEMENT
+   Kept so the old HTML does not break if it is still present.
+   If you use settlement-right.webp, this is not required.
+   ========================================================= */
+
+.rm-waiting-speech {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  left: 50%;
+  width: max-content;
+  max-width: min(280px, calc(100% - 32px));
+  padding: 11px 16px 12px;
+  border: 1px solid rgba(93, 122, 86, .16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 30px rgba(43, 65, 40, .13);
+  text-align: center;
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px) scale(.88);
+  transform-origin: 50% 100%;
+  animation: rm-waiting-speech 14s ease-in-out infinite;
+}
+
+.rm-waiting-speech::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 13px;
+  height: 13px;
+  background: rgba(255, 255, 255, .94);
+  border-right: 1px solid rgba(93, 122, 86, .16);
+  border-bottom: 1px solid rgba(93, 122, 86, .16);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.rm-waiting-speech strong {
+  display: block;
+  color: #173b22;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.rm-waiting-speech span {
+  display: block;
+  margin-top: 3px;
+  color: var(--rm-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rm-waiting-copy {
+  position: relative;
+  z-index: 8;
+  margin: 0 !important;
+  padding: 0 22px 18px;
+  color: var(--rm-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* =========================================================
+   14 SECOND LOOP — rebalanced so idle no longer dominates
+
+   0–12%   idle
+   12–38%  hi / pop out
+   38–70%  talk
+   70–87%  back
+   87–100% idle
+   ========================================================= */
+
+@keyframes rm-avatar-idle {
+  0%,
+  12%,
+  87%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  13%,
+  86% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes rm-avatar-hi {
+  0%,
+  12% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(95px) scale(.78);
+  }
+
+  17% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(20px) scale(1);
+  }
+
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.06);
+  }
+
+  31% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-3px) scale(1.04);
+  }
+
+  38%,
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(1.04);
+  }
+}
+
+@keyframes rm-avatar-talk {
+  0%,
+  38% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(1);
+  }
+
+  42% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.04);
+  }
+
+  49% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px) scale(1.07);
+  }
+
+  55% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.04);
+  }
+
+  62% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) scale(1.06);
+  }
+
+  69% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.02);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes rm-avatar-back {
+  0%,
+  70% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  74% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(4px) scale(1);
+  }
+
+  79% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(28px) scale(.94);
+  }
+
+  83% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(60px) scale(.85);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(95px) scale(.78);
+  }
+
+  87%,
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(95px) scale(.78);
+  }
+}
+
+/* Speech animation is retained only for compatibility with the old HTML. */
+@keyframes rm-waiting-speech {
+  0%,
+  38% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(.88);
+  }
+
+  42%,
+  59% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  63%,
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(.88);
+  }
+}
+
+@keyframes rm-avatar-shadow {
+  0%,
+  12%,
+  87%,
+  100% {
+    opacity: .45;
+    transform: translateX(-50%) scale(1);
+  }
+
+  25%,
+  65% {
+    opacity: .78;
+    transform: translateX(-50%) scale(1.14);
+  }
+
+  82% {
+    opacity: .32;
+    transform: translateX(-50%) scale(.80);
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .rm-waiting-card--animated {
+    min-height: 135px;
+  }
+
+  .rm-waiting-stage {
+    height: 145px;
+    grid-template-columns: 48% 52%;
+  }
+
+  .rm-avatar {
+    width: min(220px, 112%);
+    height: 225px;
+    bottom: -10px;
+  }
+
+  .rm-avatar-stage::after {
+    width: 135px;
+    height: 18px;
+    bottom: 15px;
+  }
+
+  .rm-settlement-right__image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .rm-waiting-speech {
+    top: 10px;
+    padding: 9px 13px 10px;
+  }
+
+  .rm-waiting-speech strong {
+    font-size: 15px;
+  }
+
+  .rm-waiting-speech span {
+    font-size: 11px;
+  }
+
+  .rm-waiting-copy {
+    padding: 0 18px 15px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .rm-waiting-stage {
+    grid-template-columns: 50% 50%;
+  }
+
+  .rm-avatar {
+    width: 190px;
+    height: 205px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-avatar,
+  .rm-waiting-speech,
+  .rm-avatar-stage::after {
+    animation: none !important;
+  }
+
+  .rm-avatar--idle {
+    opacity: 1 !important;
+  }
+
+  .rm-avatar--hi,
+  .rm-avatar--talk,
+  .rm-avatar--back,
+  .rm-waiting-speech {
+    opacity: 0 !important;
+  }
+}

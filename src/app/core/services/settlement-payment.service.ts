@@ -21,7 +21,7 @@ import { AuthService } from './auth.service';
 const COLLECTION = 'settlement_payments';
 
 /** Approver's "Send Reminder" button is disabled for this long after each send, per member+month. */
-const REMINDER_COOLDOWN_MS = 1 * 60 * 60 * 1000; // 6 hours
+const REMINDER_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
 // const REMINDER_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
@@ -41,6 +41,20 @@ export class SettlementPaymentService {
 
   readonly payments = signal<SettlementPayment[]>([]);
   readonly loaded = signal(false);
+
+  /**
+   * Local optimistic records waiting for Firestore to acknowledge the write.
+   *
+   * Why this exists:
+   * Firestore's onSnapshot() is realtime, but the UI should not have to wait for
+   * the snapshot round-trip after a user taps a settlement button. We update the
+   * signal immediately and keep the optimistic value here until Firestore's
+   * listener catches up. The snapshot remains the final source of truth.
+   */
+  private readonly optimisticPayments = new Map<string, SettlementPayment>();
+
+  /** Previous values used to restore the UI if an optimistic write fails. */
+  private readonly optimisticPrevious = new Map<string, SettlementPayment | undefined>();
 
   constructor() {
     this.listen();
@@ -72,7 +86,25 @@ export class SettlementPaymentService {
           };
         });
 
-        this.payments.set(list);
+        // Firestore remains the source of truth, but preserve any local optimistic
+        // updates until their writes have completed. This prevents a slow/stale
+        // snapshot from briefly putting the UI back into the old state.
+        const optimisticIds = new Set(this.optimisticPayments.keys());
+        const merged = list.map((payment) =>
+          optimisticIds.has(payment.id)
+            ? this.optimisticPayments.get(payment.id)!
+            : payment
+        );
+
+        // Optimistic records can represent a newly-created document that is not
+        // present in this particular snapshot yet. Add those records as well.
+        for (const [id, optimistic] of this.optimisticPayments) {
+          if (!merged.some((payment) => payment.id === id)) {
+            merged.push(optimistic);
+          }
+        }
+
+        this.payments.set(merged);
         this.loaded.set(true);
       },
       (err) => {
@@ -80,6 +112,69 @@ export class SettlementPaymentService {
         this.loaded.set(true);
       }
     );
+  }
+
+  /**
+   * Apply a settlement change to the UI immediately, before Firestore responds.
+   */
+  private applyOptimisticPayment(payment: SettlementPayment): void {
+    const id = payment.id;
+
+    if (!this.optimisticPrevious.has(id)) {
+      this.optimisticPrevious.set(
+        id,
+        this.payments().find((existing) => existing.id === id)
+      );
+    }
+
+    this.optimisticPayments.set(id, payment);
+
+    const current = this.payments();
+    const index = current.findIndex((existing) => existing.id === id);
+
+    if (index === -1) {
+      this.payments.set([...current, payment]);
+      return;
+    }
+
+    const next = [...current];
+    next[index] = payment;
+    this.payments.set(next);
+  }
+
+  /**
+   * Mark an optimistic write as acknowledged by Firestore. The next snapshot
+   * is then allowed to become the source of truth for this document.
+   */
+  private clearOptimisticPayment(id: string): void {
+    this.optimisticPayments.delete(id);
+    this.optimisticPrevious.delete(id);
+  }
+
+  /**
+   * Roll an optimistic update back if the Firestore write fails.
+   */
+  private rollbackOptimisticPayment(id: string): void {
+    const previous = this.optimisticPrevious.get(id);
+
+    this.optimisticPayments.delete(id);
+    this.optimisticPrevious.delete(id);
+
+    const current = this.payments();
+
+    if (previous) {
+      const index = current.findIndex((payment) => payment.id === id);
+      if (index === -1) {
+        this.payments.set([...current, previous]);
+      } else {
+        const next = [...current];
+        next[index] = previous;
+        this.payments.set(next);
+      }
+      return;
+    }
+
+    this.payments.set(current.filter((payment) => payment.id !== id));
   }
 
   private docId(monthKey: string, memberId: string): string {
@@ -146,31 +241,39 @@ export class SettlementPaymentService {
    *   Everyone starts fresh as 'pending'.
    */
   async resetMonth(monthKey: string): Promise<void> {
-    const paymentsForMonth = this.forMonth(monthKey);
+    // Snapshot the current month so we can restore the UI if the delete fails.
+    const previousMonthPayments = this.forMonth(monthKey);
 
-    // If the local snapshot already has no records for this month,
-    // there is nothing to delete.
-    //
-    // We still query Firestore below so this also works safely if the
-    // local snapshot has not caught up yet.
-    const q = firestoreQuery(
-      collection(firestoreDb, COLLECTION),
-      where('monthKey', '==', monthKey)
+    // Optimistically remove the records immediately. This keeps the settlement
+    // cards in sync with the user's delete action without waiting for Firestore.
+    this.payments.set(
+      this.payments().filter((payment) => payment.monthKey !== monthKey)
     );
 
-    const snap = await getDocs(q);
+    try {
+      const q = firestoreQuery(
+        collection(firestoreDb, COLLECTION),
+        where('monthKey', '==', monthKey)
+      );
 
-    await Promise.all(
-      snap.docs.map((paymentDoc) =>
-        deleteDoc(doc(firestoreDb, COLLECTION, paymentDoc.id))
-      )
-    );
+      const snap = await getDocs(q);
 
-    // No manual signal update is necessary.
-    // onSnapshot() will receive the deletions and update payments().
-    //
-    // This is intentionally a complete reset of the month's settlement
-    // payment records — not merely a status change.
+      await Promise.all(
+        snap.docs.map((paymentDoc) =>
+          deleteDoc(doc(firestoreDb, COLLECTION, paymentDoc.id))
+        )
+      );
+    } catch (err) {
+      // Restore the previous state immediately if the reset could not be completed.
+      const current = this.payments();
+      const withoutMonth = current.filter(
+        (payment) => payment.monthKey !== monthKey
+      );
+      this.payments.set([...withoutMonth, ...previousMonthPayments]);
+      throw err;
+    }
+
+    // onSnapshot() will subsequently confirm the deletions from Firestore.
   }
 
   /**
@@ -227,39 +330,53 @@ export class SettlementPaymentService {
     amount: number,
     monthLabel: string
   ): Promise<void> {
-    await setDoc(
-      doc(
-        firestoreDb,
-        COLLECTION,
-        this.docId(monthKey, memberId)
-      ),
-      {
-        monthKey,
-        memberId,
-        memberName,
-        amount,
-        status: 'payment_pending_confirmation' as PaymentStatus,
-        markedPaidAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const id = this.docId(monthKey, memberId);
+    const existing = this.recordFor(monthKey, memberId);
+    const now = Date.now();
+
+    const optimisticPayment: SettlementPayment = {
+      id,
+      monthKey,
+      memberId,
+      memberName,
+      amount,
+      status: 'payment_pending_confirmation' as PaymentStatus,
+      markedPaidAt: now,
+      confirmedAt: existing?.confirmedAt,
+      confirmedByUid: existing?.confirmedByUid,
+      lastReminderAt: existing?.lastReminderAt,
+      lastReminderByUid: existing?.lastReminderByUid,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    // IMPORTANT: update the signal BEFORE awaiting Firestore.
+    this.applyOptimisticPayment(optimisticPayment);
+
+    try {
+      await setDoc(
+        doc(firestoreDb, COLLECTION, id),
+        {
+          monthKey,
+          memberId,
+          memberName,
+          amount,
+          status: 'payment_pending_confirmation' as PaymentStatus,
+          markedPaidAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          createdAt: existing ? undefined : serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      this.clearOptimisticPayment(id);
+    } catch (err) {
+      this.rollbackOptimisticPayment(id);
+      throw err;
+    }
 
     // Targeted notification straight to the approver.
-    //
-    // ROOT-CAUSE FIX — this used to call notifyOnce() with a fixed ID
-    // (`settlement_paid_${monthKey}_${memberId}`) that depended only on the month and
-    // member, never on the specific event. notifyOnce() writes nothing if a doc with
-    // that ID already exists, so once ANY "marked paid" notification had ever been sent
-    // for this member+month, every later one (e.g. after resetMonth() due to a bill
-    // correction, or a second payment cycle) was silently dropped forever — no error,
-    // no history entry, nothing. Now uses notifyMember(), which always addDoc()s a
-    // brand-new history record, so every "marked paid" action produces its own event.
-    //
-    // Still try/caught and NOT awaited before this method returns. A failure here
-    // (or slowness) must never block the "I've Paid" action itself, and must never
-    // propagate back to the caller.
+    // Every action creates its own notification event through notifyMember().
     const approver = this.memberService.paymentApprover();
 
     if (approver?.uid) {
@@ -298,35 +415,52 @@ export class SettlementPaymentService {
     }
 
     const approverUid = this.auth.user()?.uid;
+    const id = this.docId(monthKey, memberId);
+    const existing = this.recordFor(monthKey, memberId);
+    const now = Date.now();
 
-    // setDoc(..., { merge: true }) here is deliberate: a member who hasn't marked paid
-    // yet may have NO settlement_payments doc at all (implicit 'pending' — see the
-    // class doc comment above). We only ever set lastReminderAt/lastReminderByUid, never
-    // `status`, so a merge onto a non-existent doc still reads back as 'pending', and a
-    // merge onto an existing doc never touches its status/markedPaidAt/confirmedAt.
-    await setDoc(
-      doc(
-        firestoreDb,
-        COLLECTION,
-        this.docId(monthKey, memberId)
-      ),
-      {
-        monthKey,
-        memberId,
-        memberName,
-        lastReminderAt: serverTimestamp(),
-        lastReminderByUid: approverUid ?? null,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const optimisticPayment: SettlementPayment = {
+      id,
+      monthKey,
+      memberId,
+      memberName,
+      amount: existing?.amount ?? amount,
+      status: existing?.status ?? 'pending',
+      markedPaidAt: existing?.markedPaidAt,
+      confirmedAt: existing?.confirmedAt,
+      confirmedByUid: existing?.confirmedByUid,
+      lastReminderAt: now,
+      lastReminderByUid: approverUid ?? undefined,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    // Disable the reminder immediately. Do not wait for the Firestore round-trip.
+    this.applyOptimisticPayment(optimisticPayment);
+
+    try {
+      // A member who has never been reminded may have no document yet. merge=true
+      // deliberately creates that document while leaving its implicit pending status.
+      await setDoc(
+        doc(firestoreDb, COLLECTION, id),
+        {
+          monthKey,
+          memberId,
+          memberName,
+          lastReminderAt: serverTimestamp(),
+          lastReminderByUid: approverUid ?? null,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      this.clearOptimisticPayment(id);
+    } catch (err) {
+      this.rollbackOptimisticPayment(id);
+      throw err;
+    }
 
     // Targeted notification straight to the member being reminded — never a broadcast.
-    // Resolve their Auth uid the same way notifySettlementCompleted() does (uid ?? doc
-    // id) — for members created through the normal "Add Member" flow these are always
-    // identical, but this stays correct for an edge-seeded member where they aren't.
-    // Not awaited before this method returns, same reasoning as markPaid() above: a
-    // failure/slowness here must never block the reminder action itself.
     const targetMember = this.memberService.members().find((m) => m.id === memberId);
     const targetUid = targetMember?.uid ?? memberId;
 
@@ -352,36 +486,54 @@ export class SettlementPaymentService {
     monthLabel: string
   ): Promise<void> {
     const uid = this.auth.user()?.uid;
+    const id = this.docId(monthKey, memberId);
+    const existing = this.recordFor(monthKey, memberId);
+    const now = Date.now();
 
-    await setDoc(
-      doc(
-        firestoreDb,
-        COLLECTION,
-        this.docId(monthKey, memberId)
-      ),
-      {
-        monthKey,
-        memberId,
-        memberName,
-        amount,
-        status: 'settled' as PaymentStatus,
-        confirmedAt: serverTimestamp(),
-        confirmedByUid: uid ?? null,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const optimisticPayment: SettlementPayment = {
+      id,
+      monthKey,
+      memberId,
+      memberName,
+      amount,
+      status: 'settled' as PaymentStatus,
+      markedPaidAt: existing?.markedPaidAt,
+      confirmedAt: now,
+      confirmedByUid: uid,
+      lastReminderAt: existing?.lastReminderAt,
+      lastReminderByUid: existing?.lastReminderByUid,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    // IMPORTANT: update the signal immediately so the Confirm Received button
+    // changes to Settled without waiting for onSnapshot().
+    this.applyOptimisticPayment(optimisticPayment);
+
+    try {
+      await setDoc(
+        doc(firestoreDb, COLLECTION, id),
+        {
+          monthKey,
+          memberId,
+          memberName,
+          amount,
+          status: 'settled' as PaymentStatus,
+          confirmedAt: serverTimestamp(),
+          confirmedByUid: uid ?? null,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      this.clearOptimisticPayment(id);
+    } catch (err) {
+      this.rollbackOptimisticPayment(id);
+      throw err;
+    }
 
     // Settlement Completed notification.
-    //
-    // One push-eligible notification per relevant member,
-    // including the payer, while skipping the person who just
-    // performed the confirmation action.
-    //
-    // Deliberately NOT awaited before this method returns (the write above,
-    // the part the UI actually depends on, already completed). Each member's
-    // notifyMember() is individually try/caught so one member's failure can no longer
-    // silently abort notifications to everyone after them in the loop.
+    // One push-eligible notification per relevant member, skipping the actor.
     this.notifySettlementCompleted(monthKey, memberId, memberName, monthLabel, uid).catch(
       (err) => console.error('confirmReceived: settlement_completed fan-out failed', err)
     );

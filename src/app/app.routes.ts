@@ -48,6 +48,12 @@ export const routes: Routes = [
   },
 
     {
+    path: 'shopping',
+    loadComponent: () => import('./features/shopping/shopping').then((m) => m.Shopping),
+    canActivate: [authGuard],
+    title: 'Shopping • RoomMate Manager',
+  },
+  {
     path: 'inventory',
     loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
     canActivate: [authGuard],

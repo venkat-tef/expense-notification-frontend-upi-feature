@@ -907,3 +907,19 @@ p {
 .mat-mdc-slide-toggle .mdc-switch.mdc-switch--selected .mat-ripple-element {
   background-color: color-mix(in srgb, var(--rm-primary) 30%, transparent) !important;
 }
+/* The Shopping add sheet owns the viewport while open. */
+body.shopping-sheet-open app-bottom-nav,
+body.shopping-sheet-open app-voice-assistant-fab {
+  display: none !important;
+}
+
+
+/* V4 — Shopping sheet must sit above the global navigation. */
+html.shopping-sheet-open app-bottom-nav,
+html.shopping-sheet-open app-voice-assistant-fab,
+body.shopping-sheet-open app-bottom-nav,
+body.shopping-sheet-open app-voice-assistant-fab {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

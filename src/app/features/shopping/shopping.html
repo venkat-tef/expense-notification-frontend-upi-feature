@@ -1,0 +1,146 @@
+<div class="rm-page rm-fade-in rm-shopping">
+  <header class="shopping-header">
+    <div class="shopping-header__copy">
+      <div class="shopping-header__eyebrow"><span class="header-icon"><mat-icon>shopping_bag</mat-icon></span><span>HOUSEHOLD</span></div>
+      <h1>Shopping List</h1>
+      <p>Everything your home needs, in one simple list.</p>
+    </div>
+    <button class="shopping-add-top" type="button" (click)="openAdd()" aria-label="Add grocery"><mat-icon>add</mat-icon></button>
+  </header>
+
+  <section class="shopping-hero rm-card">
+    <div class="shopping-hero__left">
+      <span class="shopping-hero__count">{{ pendingCount() }}</span>
+      <div><strong>{{ pendingCount() === 1 ? 'item' : 'items' }} to buy</strong><span>{{ pendingCount() ? 'Ready for your next grocery run' : 'Your list is clear' }}</span></div>
+    </div>
+    <div class="shopping-hero__estimate"><span>ESTIMATED</span><strong>₹{{ estimatedTotal() | number:'1.0-0' }}</strong></div>
+  </section>
+
+  <div class="shopping-actions">
+    <button class="action-secondary" type="button" (click)="addLowStock()"><mat-icon>inventory_2</mat-icon><span>Add low-stock</span></button>
+    @if (pendingCount() > 0) { <button class="action-primary" type="button" (click)="startShopping()"><mat-icon>shopping_cart</mat-icon><span>Start shopping</span><b>{{ pendingCount() }}</b></button> }
+  </div>
+
+  <div class="shopping-tabs" role="tablist">
+    <button type="button" [class.active]="tab() === 'todo'" (click)="tab.set('todo')">To Buy <b>{{ pendingCount() }}</b></button>
+    <button type="button" [class.active]="tab() === 'purchased'" (click)="tab.set('purchased')">Purchased <b>{{ shopping.purchasedItems().length }}</b></button>
+  </div>
+
+  @if (shoppingMode()) {
+    <section class="shopping-mode rm-card">
+      <div class="mode-top"><div><span class="mode-kicker">SHOPPING MODE</span><strong>{{ shopping.purchasedItems().length }} of {{ shopping.items().length }} completed</strong></div><button type="button" (click)="shoppingMode.set(false)" aria-label="Close shopping mode"><mat-icon>close</mat-icon></button></div>
+      <div class="progress-track"><span [style.width.%]="progress()"></span></div>
+      <div class="mode-bottom">
+        <span><mat-icon>person</mat-icon> Who's shopping?</span>
+        @if (members.members().length) { <select [ngModel]="shopperId()" (ngModelChange)="shopperId.set($event)"><option value="">{{ memberName() }}</option>@for (m of members.members(); track m.id) {<option [value]="m.id">{{ m.name }}</option>}</select> }
+      </div>
+    </section>
+  }
+
+  @if (!visibleItems().length) {
+    <div class="shopping-empty rm-card">
+      <div class="empty-art"><mat-icon>{{ tab() === 'todo' ? 'shopping_basket' : 'done_all' }}</mat-icon></div>
+      <h2>{{ tab() === 'todo' ? 'Your list is empty' : 'No purchases yet' }}</h2>
+      <p>{{ tab() === 'todo' ? 'Add groceries or bring in your low-stock items.' : 'Items you complete while shopping will appear here.' }}</p>
+      @if (tab() === 'todo') { <button type="button" class="empty-cta" (click)="openAdd()"><mat-icon>add</mat-icon>Add your first item</button> }
+    </div>
+  } @else {
+    <div class="shopping-list">
+      @for (item of visibleItems(); track item.id) {
+        <article class="shopping-item rm-card" [class.is-purchased]="item.status === 'purchased'">
+          <div class="item-image"><img [src]="image(item)" [alt]="item.name" loading="lazy" (error)="$any($event.target).src=customImage()"></div>
+          <div class="item-main"><strong>{{ item.name }}</strong><span>{{ item.quantity }} {{ item.unit }}</span>@if (item.status === 'purchased') {<small><mat-icon>check_circle</mat-icon>{{ item.purchasedByName || 'You' }} purchased</small>}</div>
+          @if (item.status === 'todo') {
+            <div class="qty"><button type="button" (click)="changeQty(item,-1)" aria-label="Decrease quantity">−</button><b>{{ item.quantity }}</b><button type="button" (click)="changeQty(item,1)" aria-label="Increase quantity">+</button></div>
+            <button class="check-btn" type="button" (click)="purchase(item)" aria-label="Mark purchased"><mat-icon>check</mat-icon></button>
+          } @else {
+            @if (!item.addedToInventory) { <button class="inventory-btn" type="button" (click)="addToInventory(item)" aria-label="Add to inventory"><mat-icon>inventory_2</mat-icon></button> } @else { <span class="added-chip"><mat-icon>check</mat-icon>In inventory</span> }
+            <button class="undo-btn" type="button" (click)="undo(item)" aria-label="Move back to shopping list"><mat-icon>undo</mat-icon></button>
+          }
+          <button class="delete-btn" type="button" (click)="remove(item)" aria-label="Remove item"><mat-icon>delete_outline</mat-icon></button>
+        </article>
+      }
+    </div>
+  }
+
+  @if (showAdd()) {
+    <div class="sheet-backdrop" (click)="closeAdd()">
+      <section class="add-sheet" role="dialog" aria-modal="true" aria-label="Add grocery" (click)="$event.stopPropagation()">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-head"><div><span class="sheet-kicker">ADD TO HOME</span><h2>What do you need?</h2><p>Pick a grocery or add your own item.</p></div><button type="button" (click)="closeAdd()" aria-label="Close"><mat-icon>close</mat-icon></button></div>
+
+        <div class="search-box"><mat-icon>search</mat-icon><input type="text" placeholder="Search groceries..." [ngModel]="search()" (ngModelChange)="search.set($event)"></div>
+
+        <div class="category-scroll">
+          @for (cat of categories; track cat) { <button type="button" [class.active]="category() === cat" (click)="category.set(cat)">{{ cat }}</button> }
+        </div>
+
+        <div class="catalog">
+          @for (g of filteredCatalog(); track g.id) {
+            <button
+              type="button"
+              class="catalog-item"
+              [class.selected]="isSelected(g)"
+              [class.in-cart]="isInCart(g)"
+              [disabled]="isInCart(g)"
+              (click)="selectGrocery(g)"
+              [attr.aria-label]="isInCart(g) ? g.name + ' already in shopping list' : 'Select ' + g.name"
+            >
+              <span class="catalog-image">
+                <img [src]="g.image" [alt]="g.name" loading="lazy" (error)="$any($event.target).src=customImage()">
+              </span>
+              <span>{{ g.name }}</span>
+              @if (isInCart(g)) {
+                <small class="catalog-cart-status"><mat-icon>check</mat-icon>In cart</small>
+              }
+            </button>
+          }
+          <button type="button" class="catalog-item custom-tile" [class.selected]="customMode()" (click)="openCustom()">
+            <span class="catalog-image custom-icon"><mat-icon>edit</mat-icon></span>
+            <span>Custom item</span>
+          </button>
+        </div>
+
+        @if (selectedGroceries().length > 0 && !customMode()) {
+          <div class="selection-card batch-selection">
+            <div class="batch-selection__head">
+              <div>
+                <span class="sheet-kicker">READY TO ADD</span>
+                <strong>{{ selectedGroceries().length }} grocery{{ selectedGroceries().length > 1 ? 'ies' : '' }} selected</strong>
+              </div>
+              <button type="button" class="clear-selection" (click)="selectedIds.set([]); selectedGrocery.set(null)" aria-label="Clear selected groceries">
+                Clear
+              </button>
+            </div>
+            <div class="selected-pills">
+              @for (g of selectedGroceries(); track g.id) {
+                <button type="button" class="selected-pill" (click)="selectGrocery(g)" [attr.aria-label]="'Remove ' + g.name">
+                  <img [src]="g.image" [alt]="g.name">
+                  <span>{{ g.name }}</span>
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </div>
+            <p class="batch-hint">Items are added with their default unit. You can adjust quantities from your list.</p>
+          </div>
+        }
+
+        @if (customMode()) {
+          <div class="selection-card custom-card">
+            <div class="custom-title"><span class="custom-icon-large"><mat-icon>edit_note</mat-icon></span><div><strong>Custom item</strong><span>Add anything not in the grocery catalog</span></div></div>
+            <label class="custom-input-label">Item name<input type="text" autofocus placeholder="e.g. Detergent, Dish wash, Paper towels" [ngModel]="customName()" (ngModelChange)="customName.set($event)"></label>
+            <div class="fields custom-fields"><label>Quantity<input type="number" min="1" [ngModel]="newQty()" (ngModelChange)="newQty.set(+$event || 1)"></label><label>Unit<select [ngModel]="newUnit()" (ngModelChange)="newUnit.set($event)"><option>pcs</option><option>pack</option><option>kg</option><option>g</option><option>l</option><option>ml</option><option>bunch</option></select></label></div>
+          </div>
+        }
+
+        <div class="sheet-footer">
+          <button type="button" class="cancel-btn" (click)="closeAdd()">Cancel</button>
+          <button type="button" class="add-confirm" [disabled]="saving() || (customMode() ? !customName().trim() : selectedGroceries().length === 0)" (click)="addSelected()">
+            <mat-icon>{{ saving() ? 'hourglass_top' : 'add_shopping_cart' }}</mat-icon>
+            {{ saving() ? 'Adding…' : (selectedGroceries().length > 1 && !customMode() ? 'Add ' + selectedGroceries().length + ' items' : 'Add to shopping list') }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</div>

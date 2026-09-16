@@ -92,7 +92,9 @@ export class Dashboard implements OnInit, OnDestroy {
     { path: '/expenses', title: 'Expenses', subtitle: 'Track & settle spending', icon: 'payments', color: '#7b1fa2' },
     { path: '/history', title: 'History', subtitle: 'Past records & stats', icon: 'history', color: '#00897b' },
     // { path: '/settings', title: 'Settings', subtitle: 'Manage roommates', icon: 'settings', color: '#455a64' },
-    { path: '/inventory', title: 'Inventory', subtitle: 'Fridge & kitchen stock', icon: 'kitchen', color: '#43a047' },
+    // { path: '/inventory', title: 'Inventory', subtitle: 'Fridge & kitchen stock', icon: 'kitchen', color: '#43a047' },
+    // { path: '/shopping', title: 'Shopping', subtitle: 'Plan your next grocery run', icon: 'shopping_cart', color: '#008f83' },
+    { path: '/shopping', title: 'Shopping', subtitle: 'Plan groceries together', icon: 'shopping_cart', color: '#2e7d32' },
   ];
 
   /** ADDITIVE — Quick Actions row. Reuses the same router.navigateByUrl path as open(). */

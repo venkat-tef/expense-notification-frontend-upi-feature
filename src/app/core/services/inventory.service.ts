@@ -515,6 +515,24 @@ export class InventoryService {
 
 
   // ==========================================================
+  // RESTOCK FROM SHOPPING
+  // ==========================================================
+
+  async restockItem(item: InventoryItem, quantity: number, unit?: InventoryUnit): Promise<void> {
+    const { uid, name } = this.currentUserStamp();
+    const sameUnit = !item.unit || !unit || item.unit === unit;
+    const nextQuantity = sameUnit && item.quantity != null ? item.quantity + quantity : quantity;
+    await updateDoc(doc(firestoreDb, COLLECTION, item.id), {
+      quantity: nextQuantity,
+      unit: unit ?? item.unit ?? null,
+      status: 'available',
+      updatedByUid: uid ?? null,
+      updatedByName: name ?? null,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  // ==========================================================
   // DELETE ITEM
   // ==========================================================
 
