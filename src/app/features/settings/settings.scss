@@ -74,3 +74,194 @@
 .rm-settings-panel {
   animation: rmFadeIn 220ms ease both;
 }
+/* ============================================================
+   ADDITIVE — SIRI / SHORTCUTS
+   Existing Settings styles above are intentionally untouched.
+   ============================================================ */
+.rm-siri-card {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-lg, 18px);
+  background: var(--rm-surface);
+  box-shadow: var(--rm-shadow-sm, 0 4px 18px rgba(0, 0, 0, .06));
+}
+
+.rm-siri-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--rm-text);
+  }
+
+  p {
+    margin: 5px 0 0;
+    color: var(--rm-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.rm-siri-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #fff;
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+}
+
+.rm-siri-copy {
+  color: var(--rm-text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+
+  p { margin: 0 0 8px; }
+}
+
+.rm-siri-primary,
+.rm-siri-secondary,
+.rm-siri-danger {
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 160ms ease;
+
+  mat-icon { width: 19px; height: 19px; font-size: 19px; }
+  &:active:not(:disabled) { transform: scale(.98); }
+  &:disabled { opacity: .55; cursor: default; }
+}
+
+.rm-siri-primary {
+  margin-top: 10px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--rm-primary), var(--rm-primary-dark));
+}
+
+.rm-siri-secondary {
+  color: var(--rm-text);
+  background: var(--rm-surface-alt);
+  border: 1px solid var(--rm-border);
+}
+
+.rm-siri-danger {
+  color: #c62828;
+  background: color-mix(in srgb, #c62828 9%, var(--rm-surface));
+  border: 1px solid color-mix(in srgb, #c62828 25%, var(--rm-border));
+}
+
+.rm-siri-error {
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  color: #b71c1c;
+  background: color-mix(in srgb, #c62828 9%, var(--rm-surface));
+  border: 1px solid color-mix(in srgb, #c62828 22%, var(--rm-border));
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.rm-siri-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+
+  > mat-icon {
+    color: var(--rm-primary);
+    font-size: 25px;
+    width: 25px;
+    height: 25px;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong { color: var(--rm-text); font-size: 14px; }
+  span { color: var(--rm-text-muted); font-size: 12px; }
+}
+
+.rm-siri-token-box {
+  padding: 15px;
+  border: 1px dashed var(--rm-border);
+  border-radius: 14px;
+  background: var(--rm-surface-alt);
+
+  .rm-siri-token-label {
+    margin-bottom: 8px;
+    color: var(--rm-text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  code {
+    display: block;
+    overflow-wrap: anywhere;
+    padding: 11px;
+    border-radius: 9px;
+    background: var(--rm-surface);
+    color: var(--rm-text);
+    font-size: 12px;
+    line-height: 1.45;
+    user-select: all;
+  }
+
+  p {
+    margin: 10px 0 12px;
+    color: var(--rm-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+.rm-siri-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.rm-siri-help {
+  margin-top: 20px;
+  padding-top: 17px;
+  border-top: 1px solid var(--rm-border);
+  color: var(--rm-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+
+  strong { color: var(--rm-text); }
+
+  ol {
+    margin: 7px 0 0;
+    padding-left: 20px;
+  }
+
+  li { margin-bottom: 4px; }
+}
+
+@media (max-width: 600px) {
+  .rm-siri-card { padding: 17px; }
+  .rm-siri-actions > button { flex: 1 1 100%; }
+}

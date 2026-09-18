@@ -31,6 +31,109 @@
       @case ('announcements') { <app-announcements-tab /> }
       @case ('configuration') { <app-configuration-tab /> }
       @case ('themes') { <app-themes-tab /> }
+      @case ('siri') {
+        <section class="rm-siri-card" aria-labelledby="siri-title">
+          <div class="rm-siri-card__header">
+            <span class="rm-siri-card__icon">
+              <mat-icon>record_voice_over</mat-icon>
+            </span>
+            <div>
+              <h2 id="siri-title">Siri & Shortcuts</h2>
+              <p>Ask Siri about your Nestly household using your own account.</p>
+            </div>
+          </div>
+
+          @if (siriError()) {
+            <div class="rm-siri-error" role="alert">
+              {{ siriError() }}
+            </div>
+          }
+
+          @if (!siriConnected()) {
+            <div class="rm-siri-copy">
+              <p>
+                Connect this Nestly account to an Apple Shortcut. Your Shortcut gets
+                its own private credential, so another roommate's Siri cannot use your account.
+              </p>
+              <p>
+                Your Firebase login is used only while connecting. It is never stored in the Shortcut.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="rm-siri-primary"
+              [disabled]="siriBusy()"
+              (click)="connectSiri()"
+            >
+              <mat-icon>{{ siriBusy() ? 'sync' : 'link' }}</mat-icon>
+              <span>{{ siriBusy() ? 'Connecting…' : 'Connect to Siri' }}</span>
+            </button>
+          } @else {
+            <div class="rm-siri-connected">
+              <div class="rm-siri-status">
+                <mat-icon>check_circle</mat-icon>
+                <div>
+                  <strong>Siri is connected</strong>
+                  <span>This Nestly account is linked to a Siri credential.</span>
+                </div>
+              </div>
+
+              @if (siriToken()) {
+                <div class="rm-siri-token-box">
+                  <div class="rm-siri-token-label">New Siri credential</div>
+                  <code>{{ siriToken() }}</code>
+                  <p>
+                    Copy this credential now and put it in the Shortcut's
+                    <strong>x-api-key</strong> field. It is shown only during this connection.
+                  </p>
+                  <button
+                    type="button"
+                    class="rm-siri-secondary"
+                    (click)="copySiriToken()"
+                  >
+                    <mat-icon>{{ siriCopied() ? 'check' : 'content_copy' }}</mat-icon>
+                    <span>{{ siriCopied() ? 'Copied' : 'Copy credential' }}</span>
+                  </button>
+                </div>
+              }
+
+              <div class="rm-siri-actions">
+                <button
+                  type="button"
+                  class="rm-siri-secondary"
+                  [disabled]="siriBusy()"
+                  (click)="connectSiri()"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  <span>{{ siriBusy() ? 'Working…' : 'Generate new credential' }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="rm-siri-danger"
+                  [disabled]="siriBusy()"
+                  (click)="disconnectSiri()"
+                >
+                  <mat-icon>link_off</mat-icon>
+                  <span>Disconnect Siri</span>
+                </button>
+              </div>
+            </div>
+          }
+
+          <div class="rm-siri-help">
+            <strong>Shortcut setup</strong>
+            <ol>
+              <li>Ask for Text: <em>What do you want to ask Nestly?</em></li>
+              <li>Get Contents of URL → POST to the Nestly voice endpoint.</li>
+              <li>Add <strong>x-api-key</strong> using the credential generated above.</li>
+              <li>Send JSON with <strong>transcript</strong> set to the provided input.</li>
+              <li>Get Dictionary Value → <strong>text</strong> → Speak Text.</li>
+            </ol>
+          </div>
+        </section>
+      }
     }
   </div>
 </div>

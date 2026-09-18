@@ -9,6 +9,7 @@ import { ThemeService } from './core/services/theme.service';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { FirebaseMessagingService } from './services/firebase-messaging';
 import { filter } from 'rxjs';
+import { SiriBridgeService } from './core/services/siri-bridge.service';
 
 @Component({
   selector: 'app-root',
@@ -123,11 +124,15 @@ readonly showBottomNav = signal(false);
 
   // NEW
   private readonly firebaseMessaging = inject(FirebaseMessagingService);
+  private readonly siriBridge = inject(SiriBridgeService);
 
   readonly ready = signal(false);
 
   constructor() {
     this.pwaUpdate.init();
+    // Siri/Apple Shortcuts bridge. It is isolated from the existing UI and
+    // reuses VoiceCommandService, so existing feature behavior is unchanged.
+    this.siriBridge.init();
 
     this.auth.whenReady().then(() => {
       this.ready.set(true);
