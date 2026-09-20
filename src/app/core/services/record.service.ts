@@ -148,23 +148,108 @@ export abstract class RecordServiceBase {
     return this.records()[0];
   }
 
-  /** Round-robin: whoever comes after the last recorded member, in member order. */
-  getNextMember(members: Member[]): Member | undefined {
-    if (!members.length) return undefined;
-    const last = this.getLastRecord();
-    if (!last) return members[0];
-    const idx = members.findIndex((m) => m.id === last.memberId);
-    if (idx === -1) return members[0];
-    return members[(idx + 1) % members.length];
+
+
+
+  /**
+ * Round-robin next member.
+ *
+ * IMPORTANT:
+ * If today's record exists and still contains skippedMemberIds,
+ * the record is a PENDING REASSIGNMENT.
+ *
+ * Example:
+ * Narendra was assigned
+ * Narendra skipped
+ * Jagan assigned
+ *
+ * Until Jagan completes the duty, Jagan remains the current member.
+ */
+getNextMember(members: Member[]): Member | undefined {
+  if (!members.length) return undefined;
+
+  const todayKey = this.todayKey();
+  const todayRecord = this.recordForDate(todayKey);
+
+  // Today's duty was reassigned but NOT completed yet.
+  if (
+    todayRecord &&
+    todayRecord.skippedMemberIds &&
+    todayRecord.skippedMemberIds.length > 0
+  ) {
+    return (
+      members.find((m) => m.id === todayRecord.memberId) ??
+      members[0]
+    );
   }
 
-  getStats(members: Member[]): MemberStat[] {
-    const counts = new Map<string, number>();
-    for (const r of this.records()) {
-      counts.set(r.memberId, (counts.get(r.memberId) ?? 0) + 1);
-    }
-    return members
-      .map((m) => ({ memberId: m.id, memberName: m.name, count: counts.get(m.id) ?? 0 }))
-      .sort((a, b) => b.count - a.count);
+  // Normal round-robin calculation.
+  const last = this.getLastRecord();
+
+  if (!last) {
+    return members[0];
   }
+
+  const idx = members.findIndex(
+    (m) => m.id === last.memberId
+  );
+
+  if (idx === -1) {
+    return members[0];
+  }
+
+  return members[(idx + 1) % members.length];
+}
+
+
+/**
+ * Today's date in YYYY-MM-DD.
+ */
+private todayKey(): string {
+  const d = new Date();
+
+  return `${d.getFullYear()}-${String(
+    d.getMonth() + 1
+  ).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+}
+
+
+/**
+ * Completed-duty statistics only.
+ *
+ * A record containing skippedMemberIds is still a pending reassignment,
+ * so it must NOT count as a completed duty.
+ *
+ * Once the assigned member clicks/marks the duty as completed,
+ * setRecord() replaces the document without skippedMemberIds,
+ * and that completed record will automatically count here.
+ */
+getStats(members: Member[]): MemberStat[] {
+  const counts = new Map<string, number>();
+
+  for (const r of this.records()) {
+    const isPendingReassignment =
+      !!r.skippedMemberIds &&
+      r.skippedMemberIds.length > 0;
+
+    if (isPendingReassignment) {
+      continue;
+    }
+
+    counts.set(
+      r.memberId,
+      (counts.get(r.memberId) ?? 0) + 1
+    );
+  }
+
+  return members
+    .map((m) => ({
+      memberId: m.id,
+      memberName: m.name,
+      count: counts.get(m.id) ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
 }

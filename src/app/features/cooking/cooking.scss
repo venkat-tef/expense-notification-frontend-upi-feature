@@ -1,80 +1,1183 @@
+/* ==========================================================================
+   GARBAGE COLLECTION / COOKING PAGE
+   Theme-aware + responsive
+   ========================================================================== */
+
+/* ==========================================================================
+   PAGE HEADER
+   ========================================================================== */
+
 .rm-mod-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+
   margin-bottom: 18px;
 
-  h1 { font-size: 22px; }
-  p { color: var(--rm-text-muted); font-size: 13px; margin-top: 2px; }
+  color: var(--rm-text);
 }
 
 .rm-mod-header__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  flex: 0 0 48px;
+
+  width: 48px;
+  height: 48px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  border-radius: 15px;
+
   color: #fff;
-  flex-shrink: 0;
+
+  box-shadow:
+    0 7px 18px color-mix(
+      in srgb,
+      var(--rm-garbage) 22%,
+      transparent
+    );
+
+  mat-icon {
+    width: 26px;
+    height: 26px;
+
+    font-size: 26px;
+    line-height: 26px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
-.rm-next-turn {
-  padding: 18px 20px;
-  margin-bottom: 16px;
-  border-left: 4px solid var(--rm-accent);
+.rm-mod-header > div {
+  min-width: 0;
 }
-.rm-next-turn__label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rm-accent);
 
-  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.rm-mod-header h1 {
+  margin: 0;
+
+  color: var(--rm-text);
+
+  font-size: clamp(21px, 3vw, 29px);
+  line-height: 1.15;
+
+  font-weight: 900;
+
+  letter-spacing: -.025em;
 }
-.rm-next-turn__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 6px;
-}
-.rm-next-turn__name {
-  font-size: 24px;
-  font-weight: 800;
-}
-.rm-next-turn__row .rm-next-turn__name {
-  margin-top: 0;
-}
-.rm-next-turn__name--empty {
-  font-size: 15px;
+
+.rm-mod-header p {
+  margin: 5px 0 0;
+
   color: var(--rm-text-muted);
-  font-weight: 600;
-}
-.rm-next-turn__skip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--rm-accent);
-  background: transparent;
-  color: var(--rm-accent);
+
   font-size: 13px;
-  font-weight: 700;
-  flex-shrink: 0;
-  cursor: pointer;
-
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-  &:hover { background: color-mix(in srgb, var(--rm-accent) 12%, transparent); }
+  line-height: 1.35;
 }
+
+
+/* ==========================================================================
+   CALENDAR
+   ========================================================================== */
 
 .rm-cal-wrap {
-  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+
+  overflow: hidden;
+
+  background: var(--rm-surface);
+
+  border: 1px solid var(--rm-border);
+
+  border-radius: 22px;
+
+  box-shadow: var(--rm-shadow);
 }
 
+
+/* ==========================================================================
+   GARBAGE DUTY REFERENCE
+   ========================================================================== */
+
+.rm-duty-reference {
+  width: 100%;
+  box-sizing: border-box;
+
+  margin-top: 18px;
+
+  color: var(--rm-text);
+}
+
+
+/* ==========================================================================
+   ARTWORK
+   ========================================================================== */
+
+.rm-duty-reference__scene {
+  position: relative;
+
+  width: 100%;
+  max-width: 100%;
+
+  aspect-ratio: 955 / 500;
+
+  overflow: hidden;
+
+  border-radius: 24px;
+
+  background: var(--rm-surface);
+
+  border: 1px solid color-mix(
+    in srgb,
+    var(--rm-primary) 18%,
+    var(--rm-border)
+  );
+
+  box-shadow:
+    0 12px 32px color-mix(
+      in srgb,
+      var(--rm-primary) 12%,
+      transparent
+    );
+
+  isolation: isolate;
+}
+
+.rm-duty-reference__scene::after {
+  content: '';
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    180deg,
+    transparent 65%,
+    color-mix(
+      in srgb,
+      var(--rm-primary-dark) 12%,
+      transparent
+    ) 100%
+  );
+
+  z-index: 1;
+}
+
+.rm-duty-reference__art {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  transition: transform .35s ease;
+}
+
+.rm-duty-reference__scene:hover
+  .rm-duty-reference__art {
+  transform: scale(1.015);
+}
+
+
+/* ==========================================================================
+   DUTY MESSAGE
+   ========================================================================== */
+
+.rm-duty-reference__message {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  width: calc(100% - 8px);
+
+  margin: 14px 4px 12px;
+
+  min-height: 68px;
+
+  padding: 14px 18px;
+
+  box-sizing: border-box;
+
+  /*
+   * Theme-aware application surface.
+   */
+  background: var(--rm-surface);
+
+  /*
+   * Theme-aware application border.
+   */
+  border: 1px solid color-mix(
+    in srgb,
+    var(--rm-garbage) 18%,
+    var(--rm-border)
+  );
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 6px 20px color-mix(
+      in srgb,
+      var(--rm-primary) 8%,
+      transparent
+    );
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    background .2s ease,
+    border-color .2s ease;
+}
+
+.rm-duty-reference__message:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 9px 24px color-mix(
+      in srgb,
+      var(--rm-primary) 11%,
+      transparent
+    );
+}
+
+.rm-duty-reference__message > div {
+  min-width: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   Duty title
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__message strong {
+  display: block;
+
+  /*
+   * Garbage accent follows the active theme.
+   */
+  color: var(--rm-garbage);
+
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.2;
+
+  font-weight: 900;
+
+  letter-spacing: -.02em;
+}
+
+
+/* --------------------------------------------------------------------------
+   Duty description
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__message p {
+  margin: 4px 0 0;
+
+  color: var(--rm-text-muted);
+
+  font-size: clamp(12px, 1.5vw, 14px);
+  line-height: 1.35;
+}
+
+
+/* ==========================================================================
+   MEGAPHONE
+   ========================================================================== */
+
+.rm-duty-reference__megaphone {
+  flex: 0 0 auto;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--rm-garbage) 11%,
+      var(--rm-surface)
+    );
+
+  color: var(--rm-garbage);
+
+  font-size: 23px;
+  line-height: 1;
+
+  box-shadow:
+    inset 0 0 0 1px color-mix(
+      in srgb,
+      var(--rm-garbage) 10%,
+      transparent
+    );
+}
+
+
+/* ==========================================================================
+   COLLECT BUTTON
+   ========================================================================== */
+
+.rm-duty-reference__collect {
+  position: relative;
+
+  width: 100%;
+
+  min-height: 58px;
+
+  padding: 8px 20px;
+
+  border: 0;
+
+  border-radius: 17px;
+
+  /*
+   * ALWAYS follows the active application primary theme.
+   */
+  background:
+    linear-gradient(
+      135deg,
+      var(--rm-primary-dark) 0%,
+      var(--rm-primary) 52%,
+      var(--rm-primary-dark) 100%
+    );
+
+  color: #fff;
+
+  font: inherit;
+
+  font-size: clamp(16px, 2vw, 19px);
+  line-height: 1;
+
+  font-weight: 900;
+
+  letter-spacing: -.01em;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  box-shadow:
+    0 8px 20px color-mix(
+      in srgb,
+      var(--rm-primary) 25%,
+      transparent
+    ),
+    inset 0 1px 0 rgba(255, 255, 255, .18);
+
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    box-shadow .18s ease,
+    filter .18s ease,
+    opacity .18s ease;
+}
+
+
+/* --------------------------------------------------------------------------
+   Button highlight
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__collect::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 1px;
+
+  border-radius: 16px;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, .12),
+    transparent 45%
+  );
+}
+
+
+/* --------------------------------------------------------------------------
+   Button hover
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__collect:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  filter: brightness(1.06);
+
+  box-shadow:
+    0 12px 26px color-mix(
+      in srgb,
+      var(--rm-primary) 30%,
+      transparent
+    ),
+    inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+
+
+/* --------------------------------------------------------------------------
+   Button active
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__collect:active:not(:disabled) {
+  transform: translateY(0);
+
+  box-shadow:
+    0 5px 14px color-mix(
+      in srgb,
+      var(--rm-primary) 22%,
+      transparent
+    );
+}
+
+
+/* --------------------------------------------------------------------------
+   COMPLETED / DISABLED BUTTON
+   --------------------------------------------------------------------------
+   IMPORTANT:
+   Do NOT use --rm-success here.
+   That was causing the green button.
+
+   Completed button now continues to use the active theme primary colour.
+   -------------------------------------------------------------------------- */
+
+.rm-duty-reference__collect:disabled {
+  cursor: default;
+
+  opacity: 1;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--rm-primary-dark) 0%,
+      var(--rm-primary) 52%,
+      var(--rm-primary-dark) 100%
+    );
+
+  color: #fff;
+
+  box-shadow:
+    0 7px 18px color-mix(
+      in srgb,
+      var(--rm-primary) 22%,
+      transparent
+    );
+}
+
+
+/* ==========================================================================
+   CHECK ICON
+   ========================================================================== */
+
+.rm-duty-reference__check {
+  position: relative;
+
+  z-index: 1;
+
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 28px;
+
+  border-radius: 50%;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, .96);
+
+  /*
+   * Check follows active primary colour.
+   */
+  color: var(--rm-primary);
+
+  font-size: 17px;
+  line-height: 1;
+
+  font-weight: 900;
+
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, .10);
+}
+
+
+/* ==========================================================================
+   COMPLETED STATE
+   ========================================================================== */
+
+.rm-duty-reference--completed
+  .rm-duty-reference__message {
+
+  border-color: color-mix(
+    in srgb,
+    var(--rm-garbage) 22%,
+    var(--rm-border)
+  );
+
+  background: var(--rm-surface);
+}
+
+.rm-duty-reference--completed
+  .rm-duty-reference__message
+  strong {
+
+  /*
+   * Keep the title theme-aware.
+   * Do NOT switch it to --rm-success.
+   */
+  color: var(--rm-garbage);
+}
+
+.rm-duty-reference--completed
+  .rm-duty-reference__message
+  .rm-duty-reference__megaphone {
+
+  color: var(--rm-garbage);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--rm-garbage) 11%,
+      var(--rm-surface)
+    );
+}
+
+
+/* ==========================================================================
+   DARK THEMES
+   ThemeService uses .rm-dark
+   ========================================================================== */
+
+:root.rm-dark {
+
+  .rm-duty-reference__message {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(
+          in srgb,
+          var(--rm-surface) 88%,
+          var(--rm-primary) 12%
+        ),
+        var(--rm-surface)
+      );
+
+    border-color: color-mix(
+      in srgb,
+      var(--rm-primary) 24%,
+      var(--rm-border)
+    );
+
+    box-shadow:
+      0 8px 28px color-mix(
+        in srgb,
+        var(--rm-primary) 14%,
+        transparent
+      );
+  }
+
+  .rm-duty-reference__collect {
+    box-shadow:
+      0 8px 26px color-mix(
+        in srgb,
+        var(--rm-primary) 30%,
+        transparent
+      ),
+      0 0 20px color-mix(
+        in srgb,
+        var(--rm-glow) 35%,
+        transparent
+      );
+  }
+}
+
+
+/* ==========================================================================
+   FANTASY THEME
+   ThemeService uses .rm-fantasy
+   ========================================================================== */
+
+:root.rm-fantasy {
+
+  .rm-duty-reference__scene {
+    border-color: color-mix(
+      in srgb,
+      var(--rm-primary) 30%,
+      var(--rm-border)
+    );
+
+    box-shadow:
+      0 12px 36px color-mix(
+        in srgb,
+        var(--rm-primary) 18%,
+        transparent
+      );
+  }
+
+  .rm-duty-reference__message {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(
+          in srgb,
+          var(--rm-surface) 88%,
+          var(--rm-primary) 12%
+        ),
+        var(--rm-surface)
+      );
+
+    border-color: color-mix(
+      in srgb,
+      var(--rm-primary) 25%,
+      var(--rm-border)
+    );
+  }
+
+  .rm-duty-reference__collect {
+    box-shadow:
+      0 10px 28px color-mix(
+        in srgb,
+        var(--rm-primary) 30%,
+        transparent
+      ),
+      0 0 24px color-mix(
+        in srgb,
+        var(--rm-glow) 45%,
+        transparent
+      );
+  }
+}
+
+
+/* ==========================================================================
+   MOBILE — 700px AND BELOW
+   ========================================================================== */
+
+@media (max-width: 700px) {
+
+  .rm-page {
+    width: 100%;
+    max-width: 100%;
+
+    box-sizing: border-box;
+
+    padding-bottom:
+      calc(
+        88px + env(safe-area-inset-bottom)
+      );
+  }
+
+
+  /* ------------------------------------------------------------------------
+     GARBAGE COLLECTION HEADER
+     ------------------------------------------------------------------------ */
+
+  .rm-mod-header {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    margin: 0 0 14px;
+
+    padding: 4px 2px;
+
+    min-height: 52px;
+  }
+
+  .rm-mod-header__icon {
+    flex: 0 0 44px;
+
+    width: 44px;
+    height: 44px;
+
+    min-width: 44px;
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+      0 5px 14px rgba(0, 0, 0, .10);
+  }
+
+  .rm-mod-header__icon mat-icon {
+    width: 24px;
+    height: 24px;
+
+    font-size: 24px;
+    line-height: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0;
+  }
+
+  .rm-mod-header > div {
+    min-width: 0;
+
+    flex: 1;
+  }
+
+  .rm-mod-header h1 {
+    margin: 0;
+
+    font-size: 20px;
+    line-height: 1.15;
+
+    font-weight: 900;
+
+    letter-spacing: -.025em;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+  .rm-mod-header p {
+    margin: 4px 0 0;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+
+    color: var(--rm-text-muted);
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     CALENDAR
+     ------------------------------------------------------------------------ */
+
+  .rm-cal-wrap {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    margin-bottom: 14px;
+
+    border-radius: 18px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     DUTY SECTION
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    margin-top: 12px;
+
+    overflow: visible;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     ARTWORK
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__scene {
+    width: 100%;
+    max-width: 100%;
+
+    aspect-ratio: 955 / 500;
+
+    box-sizing: border-box;
+
+    border-radius: 17px;
+
+    overflow: hidden;
+
+    box-shadow:
+      0 7px 20px rgba(0, 0, 0, .10);
+  }
+
+  .rm-duty-reference__art {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+    object-position: center;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     MESSAGE CARD
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__message {
+    width: calc(100% - 4px);
+
+    margin: 10px 2px 10px;
+
+    min-height: 60px;
+
+    box-sizing: border-box;
+
+    padding: 11px 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    border-radius: 16px;
+  }
+
+  .rm-duty-reference__message > div {
+    min-width: 0;
+  }
+
+  .rm-duty-reference__megaphone {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+
+    border-radius: 11px;
+
+    font-size: 19px;
+  }
+
+  .rm-duty-reference__message strong {
+    font-size: 15px;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+  .rm-duty-reference__message p {
+    margin-top: 3px;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+
+    white-space: normal;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     COLLECT BUTTON
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__collect {
+    width: 100%;
+
+    min-height: 56px;
+
+    box-sizing: border-box;
+
+    border-radius: 16px;
+
+    padding: 7px 16px;
+
+    font-size: 16px;
+
+    line-height: 1;
+
+    gap: 9px;
+
+    box-shadow:
+      0 7px 18px color-mix(
+        in srgb,
+        var(--rm-primary) 22%,
+        transparent
+      );
+  }
+
+
+  /* ------------------------------------------------------------------------
+     DISABLED / COMPLETED BUTTON
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__collect:disabled {
+    background:
+      linear-gradient(
+        135deg,
+        var(--rm-primary-dark) 0%,
+        var(--rm-primary) 52%,
+        var(--rm-primary-dark) 100%
+      );
+
+    color: #fff;
+
+    box-shadow:
+      0 7px 18px color-mix(
+        in srgb,
+        var(--rm-primary) 22%,
+        transparent
+      );
+  }
+
+
+  /* Smaller tick on mobile */
+
+  .rm-duty-reference__check {
+    width: 28px;
+    height: 28px;
+
+    min-width: 28px;
+
+    font-size: 17px;
+
+    color: var(--rm-primary);
+  }
+}
+
+
+/* ==========================================================================
+   SMALL PHONES — 420px AND BELOW
+   ========================================================================== */
+
+@media (max-width: 420px) {
+
+  .rm-page {
+    padding-bottom:
+      calc(
+        84px + env(safe-area-inset-bottom)
+      );
+  }
+
+
+  /* ------------------------------------------------------------------------
+     HEADER
+     ------------------------------------------------------------------------ */
+
+  .rm-mod-header {
+    gap: 10px;
+
+    margin-bottom: 12px;
+
+    min-height: 48px;
+  }
+
+  .rm-mod-header__icon {
+    flex-basis: 40px;
+
+    width: 40px;
+    height: 40px;
+
+    min-width: 40px;
+    min-height: 40px;
+
+    border-radius: 12px;
+  }
+
+  .rm-mod-header__icon mat-icon {
+    width: 22px;
+    height: 22px;
+
+    font-size: 22px;
+    line-height: 22px;
+  }
+
+  .rm-mod-header h1 {
+    font-size: 18px;
+  }
+
+  .rm-mod-header p {
+    font-size: 10px;
+
+    margin-top: 3px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     CALENDAR
+     ------------------------------------------------------------------------ */
+
+  .rm-cal-wrap {
+    border-radius: 16px;
+
+    margin-bottom: 12px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     DUTY ARTWORK
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference {
+    margin-top: 10px;
+  }
+
+  .rm-duty-reference__scene {
+    border-radius: 15px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     MESSAGE
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__message {
+    min-height: 56px;
+
+    margin-top: 9px;
+
+    padding: 10px 11px;
+
+    gap: 8px;
+
+    border-radius: 14px;
+  }
+
+  .rm-duty-reference__megaphone {
+    width: 33px;
+    height: 33px;
+
+    min-width: 33px;
+
+    border-radius: 10px;
+
+    font-size: 17px;
+  }
+
+  .rm-duty-reference__message strong {
+    font-size: 14px;
+  }
+
+  .rm-duty-reference__message p {
+    font-size: 10px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     BUTTON
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__collect {
+    min-height: 52px;
+
+    border-radius: 14px;
+
+    font-size: 15px;
+
+    padding: 6px 13px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     DISABLED / COMPLETED BUTTON
+     ------------------------------------------------------------------------ */
+
+  .rm-duty-reference__collect:disabled {
+    background:
+      linear-gradient(
+        135deg,
+        var(--rm-primary-dark) 0%,
+        var(--rm-primary) 52%,
+        var(--rm-primary-dark) 100%
+      );
+
+    color: #fff;
+  }
+
+
+  /* Smaller tick */
+
+  .rm-duty-reference__check {
+    width: 26px;
+    height: 26px;
+
+    min-width: 26px;
+
+    font-size: 16px;
+
+    color: var(--rm-primary);
+  }
+}
+
+
+/* ==========================================================================
+   VERY SMALL PHONES — 360px AND BELOW
+   ========================================================================== */
+
+@media (max-width: 360px) {
+
+  .rm-mod-header__icon {
+    flex-basis: 38px;
+
+    width: 38px;
+    height: 38px;
+
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .rm-mod-header h1 {
+    font-size: 17px;
+  }
+
+  .rm-mod-header p {
+    font-size: 9.5px;
+  }
+
+  .rm-duty-reference__message strong {
+    font-size: 13px;
+  }
+
+  .rm-duty-reference__message p {
+    font-size: 9.5px;
+  }
+
+  .rm-duty-reference__check {
+    width: 25px;
+    height: 25px;
+
+    min-width: 25px;
+
+    font-size: 15px;
+  }
+}

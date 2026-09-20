@@ -80,14 +80,29 @@ export class History {
     )
   );
 
-  readonly cookingRows = computed(() =>
-    this.buildRows(
-      this.cookingService.records(),
-      this.cookingMonth(),
-      this.cookingSearch()
-    )
-  );
+readonly cookingRows = computed(() => {
+  /**
+   * A record with skippedMemberIds is a pending reassignment,
+   * NOT a completed garbage-duty entry.
+   *
+   * Example:
+   * Narendra skipped → Jagan assigned
+   *
+   * Until Jagan completes:
+   * - do not show Jagan under "Done By"
+   * - do not show the row in completed History
+   */
+  const completedRecords =
+    this.cookingService.records().filter(
+      (record) => !record.skippedMemberIds?.length
+    );
 
+  return this.buildRows(
+    completedRecords,
+    this.cookingMonth(),
+    this.cookingSearch()
+  );
+});
   // Only rotation-eligible members are included in duty-count summaries.
   readonly waterStats = computed(() =>
     this.waterService.getStats(

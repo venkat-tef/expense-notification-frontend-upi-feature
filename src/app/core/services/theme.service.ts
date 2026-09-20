@@ -18,6 +18,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'light',
     tokens: {
       '--rm-primary': '#00897b',
+      '--rm-app-bg': '#f7f8fa',
+      '--rm-water': '#0288d1',
+      '--rm-garbage': '#ef6c00',
+      '--rm-expenses': '#7b1fa2',
+      '--rm-history': '#00897b',
+      '--rm-shopping': '#2e7d32',
+      '--rm-glow': 'rgba(0, 137, 123, 0.18)',
       '--rm-primary-dark': '#00695c',
       '--rm-accent': '#ff7043',
       '--rm-success': '#2e7d32',
@@ -38,6 +45,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'light',
     tokens: {
       '--rm-primary': '#0288d1',
+      '--rm-app-bg': '#f2f8fb',
+      '--rm-water': '#0288d1',
+      '--rm-garbage': '#ef6c00',
+      '--rm-expenses': '#7b1fa2',
+      '--rm-history': '#00897b',
+      '--rm-shopping': '#2e7d32',
+      '--rm-glow': 'rgba(2, 136, 209, 0.18)',
       '--rm-primary-dark': '#01579b',
       '--rm-accent': '#00acc1',
       '--rm-success': '#2e7d32',
@@ -58,6 +72,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'light',
     tokens: {
       '--rm-primary': '#2e7d32',
+      '--rm-app-bg': '#f4f8f2',
+      '--rm-water': '#0288d1',
+      '--rm-garbage': '#ef6c00',
+      '--rm-expenses': '#7b1fa2',
+      '--rm-history': '#2e7d32',
+      '--rm-shopping': '#2e7d32',
+      '--rm-glow': 'rgba(46, 125, 50, 0.18)',
       '--rm-primary-dark': '#1b5e20',
       '--rm-accent': '#8bc34a',
       '--rm-success': '#33691e',
@@ -78,6 +99,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'light',
     tokens: {
       '--rm-primary': '#ef6c00',
+      '--rm-app-bg': '#fff8f2',
+      '--rm-water': '#0288d1',
+      '--rm-garbage': '#ef6c00',
+      '--rm-expenses': '#9c27b0',
+      '--rm-history': '#ef6c00',
+      '--rm-shopping': '#2e7d32',
+      '--rm-glow': 'rgba(239, 108, 0, 0.18)',
       '--rm-primary-dark': '#c25400',
       '--rm-accent': '#f9a825',
       '--rm-success': '#2e7d32',
@@ -98,6 +126,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'light',
     tokens: {
       '--rm-primary': '#7e57c2',
+      '--rm-app-bg': '#f9f6fc',
+      '--rm-water': '#0288d1',
+      '--rm-garbage': '#ef6c00',
+      '--rm-expenses': '#7e57c2',
+      '--rm-history': '#5e35b1',
+      '--rm-shopping': '#2e7d32',
+      '--rm-glow': 'rgba(126, 87, 194, 0.18)',
       '--rm-primary-dark': '#5e35b1',
       '--rm-accent': '#ba68c8',
       '--rm-success': '#2e7d32',
@@ -118,6 +153,13 @@ const THEMES: ThemeDefinition[] = [
     colorScheme: 'dark',
     tokens: {
       '--rm-primary': '#4db6ac',
+      '--rm-app-bg': '#141816',
+      '--rm-water': '#29b6f6',
+      '--rm-garbage': '#ff8a65',
+      '--rm-expenses': '#ce93d8',
+      '--rm-history': '#4db6ac',
+      '--rm-shopping': '#81c995',
+      '--rm-glow': 'rgba(77, 182, 172, 0.26)',
       '--rm-primary-dark': '#26a69a',
       '--rm-accent': '#ffab91',
       '--rm-success': '#81c995',
@@ -130,6 +172,89 @@ const THEMES: ThemeDefinition[] = [
       '--rm-border': '#2c3532',
     },
   },
+
+  {
+    id: 'vibrant-playful',
+    name: 'Vibrant & Playful',
+    tagline: 'Bright, friendly and energetic',
+    swatch: ['#087cff', '#8b35d6', '#f4f8ff'],
+    colorScheme: 'light',
+    tokens: {
+      '--rm-primary': '#087cff',
+      '--rm-primary-dark': '#0756b8',
+      '--rm-accent': '#8b35d6',
+      '--rm-success': '#0b9f78',
+      '--rm-success-bg': '#e5faf3',
+      '--rm-surface': '#ffffff',
+      '--rm-surface-alt': '#f2f6ff',
+      '--rm-bg': '#f5f9ff',
+      '--rm-text': '#14213d',
+      '--rm-text-muted': '#63718b',
+      '--rm-border': '#dce6f6',
+      '--rm-app-bg': 'linear-gradient(180deg, #f4f9ff 0%, #f8f7ff 55%, #fff9f5 100%)',
+      '--rm-water': '#0b8cff',
+      '--rm-garbage': '#ff6b35',
+      '--rm-expenses': '#8b35d6',
+      '--rm-history': '#08a88b',
+      '--rm-shopping': '#2878e8',
+      '--rm-glow': 'rgba(8, 124, 255, 0.20)',
+    },
+  },
+  {
+    id: 'midnight-neon',
+    name: 'Midnight Neon',
+    tagline: 'Dark, modern and luminous',
+    swatch: ['#08bfff', '#a855f7', '#080d1b'],
+    colorScheme: 'dark',
+    tokens: {
+      '--rm-primary': '#08bfff',
+      '--rm-primary-dark': '#0094cc',
+      '--rm-accent': '#a855f7',
+      '--rm-success': '#35d39a',
+      '--rm-success-bg': 'rgba(53, 211, 154, 0.16)',
+      '--rm-surface': '#11182b',
+      '--rm-surface-alt': '#172039',
+      '--rm-bg': '#080d1b',
+      '--rm-text': '#f5f8ff',
+      '--rm-text-muted': '#9ba8c0',
+      '--rm-border': '#263451',
+      '--rm-app-bg': 'linear-gradient(180deg, #070b18 0%, #0b1022 52%, #0a0f20 100%)',
+      '--rm-water': '#19c7ff',
+      '--rm-garbage': '#ff8a3d',
+      '--rm-expenses': '#c084fc',
+      '--rm-history': '#35d3b0',
+      '--rm-shopping': '#55a7ff',
+      '--rm-glow': 'rgba(8, 191, 255, 0.28)',
+    },
+  },
+  {
+    id: 'fantasy-gradient',
+    name: 'Fantasy Gradient',
+    tagline: 'Dreamy, colourful and magical',
+    swatch: ['#5b5ce2', '#ff5fa2', '#f5efff'],
+    colorScheme: 'light',
+    tokens: {
+      '--rm-primary': '#5d67e8',
+      '--rm-primary-dark': '#4149b8',
+      '--rm-accent': '#ff5fa7',
+      '--rm-success': '#19b79d',
+      '--rm-success-bg': 'rgba(25, 183, 157, 0.14)',
+      '--rm-surface': 'rgba(255, 255, 255, 0.90)',
+      '--rm-surface-alt': 'rgba(255, 255, 255, 0.66)',
+      '--rm-bg': '#6471d8',
+      '--rm-text': '#202451',
+      '--rm-text-muted': '#657094',
+      '--rm-border': 'rgba(255, 255, 255, 0.42)',
+      '--rm-app-bg': 'linear-gradient(180deg, #4566d9 0%, #5d69dc 38%, #8064d2 67%, #d878b7 100%)',
+      '--rm-water': '#3c9dff',
+      '--rm-garbage': '#ff7b59',
+      '--rm-expenses': '#9b5de5',
+      '--rm-history': '#19b79d',
+      '--rm-shopping': '#4d86f4',
+      '--rm-glow': 'rgba(255, 255, 255, 0.22)',
+    },
+  },
+
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -137,7 +262,6 @@ export class ThemeService {
   readonly themes: readonly ThemeDefinition[] = THEMES;
 
   readonly activeThemeId = signal<string>(this.readStoredThemeId());
-
   readonly activeTheme = signal<ThemeDefinition>(this.resolve(this.activeThemeId()));
 
   constructor() {
@@ -149,13 +273,19 @@ export class ThemeService {
   }
 
   select(themeId: string): void {
-    if (!THEMES.some((t) => t.id === themeId)) return;
-    localStorage.setItem(STORAGE_KEY, themeId);
+    if (!THEMES.some((theme) => theme.id === themeId)) return;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, themeId);
+    } catch {
+      // Theme still changes for the current session if storage is unavailable.
+    }
+
     this.activeThemeId.set(themeId);
   }
 
   private resolve(id: string): ThemeDefinition {
-    return THEMES.find((t) => t.id === id) ?? THEMES[0];
+    return THEMES.find((theme) => theme.id === id) ?? THEMES[0];
   }
 
   private readStoredThemeId(): string {
@@ -166,42 +296,50 @@ export class ThemeService {
     }
   }
 
-private applyToDocument(theme: ThemeDefinition): void {
-  const root = document.documentElement;
+  private applyToDocument(theme: ThemeDefinition): void {
+    if (typeof document === 'undefined') return;
 
-  for (const [key, value] of Object.entries(theme.tokens)) {
-    root.style.setProperty(key, value);
-  }
+    const root = document.documentElement;
 
-  root.style.colorScheme = theme.colorScheme;
-
-  const themeColorMeta = document.querySelector(
-    'meta[name="theme-color"]'
-  );
-
-  if (themeColorMeta) {
-    const backgroundColor = theme.tokens['--rm-bg'];
-
-    if (backgroundColor) {
-      themeColorMeta.setAttribute('content', backgroundColor);
+    for (const [key, value] of Object.entries(theme.tokens)) {
+      root.style.setProperty(key, value);
     }
+
+    root.style.colorScheme = theme.colorScheme;
+
+    root.classList.toggle('rm-dark', theme.colorScheme === 'dark');
+    root.classList.toggle('rm-light', theme.colorScheme === 'light');
+    root.classList.toggle('rm-vibrant', theme.id === 'vibrant-playful');
+    root.classList.toggle('rm-fantasy', theme.id === 'fantasy-gradient');
+
+    // Keep iOS standalone status-bar treatment aligned with the selected theme.
+    const statusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (statusBar) {
+      statusBar.setAttribute('content', theme.colorScheme === 'dark' || theme.id === 'fantasy-gradient' ? 'black-translucent' : 'default');
+    }
+
+    this.applyMetaThemeColor(theme.tokens['--rm-app-bg'] ?? theme.tokens['--rm-bg']);
   }
-
-  const isDark = theme.colorScheme === 'dark';
-
-  root.classList.toggle('rm-dark', isDark);
-  root.classList.toggle('rm-light', !isDark);
-}
 
   private applyMetaThemeColor(bgColor: string): void {
     let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+
     if (!meta) {
-      // Defensive fallback only — index.html already ships exactly one theme-color
-      // meta tag, so this path shouldn't normally run.
       meta = document.createElement('meta');
       meta.setAttribute('name', 'theme-color');
       document.head.appendChild(meta);
     }
-    meta.setAttribute('content', bgColor);
+
+    // Browsers do not render gradients in theme-color; use the solid base token.
+    meta.setAttribute('content', bgColor.startsWith('linear-gradient') ? themeFallbackBg(this.activeThemeId()) : bgColor);
+  }
+}
+
+function themeFallbackBg(themeId: string): string {
+  switch (themeId) {
+    case 'vibrant-playful': return '#f5f9ff';
+    case 'midnight-neon': return '#080d1b';
+    case 'fantasy-gradient': return '#4566d9';
+    default: return '#f7f8fa';
   }
 }

@@ -9,7 +9,6 @@ import { ThemeService } from './core/services/theme.service';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { FirebaseMessagingService } from './services/firebase-messaging';
 import { filter } from 'rxjs';
-import { SiriBridgeService } from './core/services/siri-bridge.service';
 
 @Component({
   selector: 'app-root',
@@ -22,7 +21,9 @@ import { SiriBridgeService } from './core/services/siri-bridge.service';
   </div>
 
   @if (showBottomNav()) {
-    <app-voice-assistant-fab />
+    @if (showVoiceFab()) {
+      <app-voice-assistant-fab />
+    }
     <app-bottom-nav />
   }
 }@else {
@@ -121,18 +122,15 @@ export class App {
   private readonly router = inject(Router);
 
 readonly showBottomNav = signal(false);
+  readonly showVoiceFab = signal(false);
 
   // NEW
   private readonly firebaseMessaging = inject(FirebaseMessagingService);
-  private readonly siriBridge = inject(SiriBridgeService);
 
   readonly ready = signal(false);
 
   constructor() {
     this.pwaUpdate.init();
-    // Siri/Apple Shortcuts bridge. It is isolated from the existing UI and
-    // reuses VoiceCommandService, so existing feature behavior is unchanged.
-    this.siriBridge.init();
 
     this.auth.whenReady().then(() => {
       this.ready.set(true);
@@ -159,20 +157,21 @@ if (user) {
     });
 
     this.router.events
-  .pipe(filter(event => event instanceof NavigationEnd))
-  .subscribe(() => {
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        const hideRoutes = [
+          '/login',
+          '/signup',
+          '/forgot-password',
+          '/welcome'
+        ];
 
-    const hideRoutes = [
-      '/login',
-      '/signup',
-      '/forgot-password',
-      '/welcome'
-    ];
+        const hide = hideRoutes.some(r => this.router.url.startsWith(r));
+        const onDashboard = this.router.url.startsWith('/dashboard');
 
-    const hide =
-      hideRoutes.some(r => this.router.url.startsWith(r));
-
-    this.showBottomNav.set(!hide);
-  });
+        this.showBottomNav.set(!hide);
+        // Dashboard has its own Ask Nestly card; keep the global FAB on every other authenticated screen.
+        this.showVoiceFab.set(!hide && !onDashboard);
+      });
   }
 }

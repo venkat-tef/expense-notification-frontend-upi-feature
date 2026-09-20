@@ -11,6 +11,13 @@ export interface ThemeTokens {
   '--rm-text': string;
   '--rm-text-muted': string;
   '--rm-border': string;
+  '--rm-app-bg': string;
+  '--rm-water': string;
+  '--rm-garbage': string;
+  '--rm-expenses': string;
+  '--rm-history': string;
+  '--rm-shopping': string;
+  '--rm-glow': string;
 }
 
 export interface ThemeDefinition {

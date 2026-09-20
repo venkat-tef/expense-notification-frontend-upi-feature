@@ -17,6 +17,13 @@
   --rm-radius-sm: 10px;
   --rm-shadow: 0 2px 10px rgba(20, 30, 28, 0.06), 0 1px 2px rgba(20, 30, 28, 0.04);
   --rm-shadow-hover: 0 8px 24px rgba(20, 30, 28, 0.12);
+  --rm-app-bg: #f7f8fa;
+  --rm-water: #0288d1;
+  --rm-garbage: #ef6c00;
+  --rm-expenses: #7b1fa2;
+  --rm-history: #00897b;
+  --rm-shopping: #2e7d32;
+  --rm-glow: rgba(0, 137, 123, 0.18);
 
   color-scheme: light;
 }
@@ -70,7 +77,7 @@ html {
   margin: 0;
   padding: 0;
 
-  background-color: var(--rm-bg);
+  background: var(--rm-app-bg, var(--rm-bg));
   color: var(--rm-text);
 
   /* Prevent browser from applying its own light form-control scheme */
@@ -102,7 +109,7 @@ body {
   position: fixed;
   overscroll-behavior: none;
 
-  background-color: var(--rm-bg);
+  background: var(--rm-app-bg, var(--rm-bg));
   color: var(--rm-text);
 }
 
@@ -114,7 +121,7 @@ body {
    * Use background-color instead of a fixed color so every selected theme
    * controls the complete page background.
    */
-  background-color: var(--rm-bg);
+  background: var(--rm-app-bg, var(--rm-bg));
   color: var(--rm-text);
 
   -webkit-font-smoothing: antialiased;
@@ -136,7 +143,7 @@ app-root {
 
   min-height: 100%;
 
-  background-color: var(--rm-bg);
+  background: var(--rm-app-bg, var(--rm-bg));
   color: var(--rm-text);
 }
 
@@ -152,7 +159,7 @@ app-root::before {
   position: fixed;
   inset: 0;
 
-  background-color: var(--rm-bg);
+  background: var(--rm-app-bg, var(--rm-bg));
 
   pointer-events: none;
   z-index: -1;
@@ -278,6 +285,39 @@ p {
 }
 
 
+
+
+/* ---------------------------------------------------------------------------
+   Full-app theme surface
+   --------------------------------------------------------------------------- */
+
+:root.rm-fantasy {
+  color-scheme: light;
+}
+
+:root.rm-dark {
+  color-scheme: dark;
+}
+
+.rm-app-scroll {
+  background: var(--rm-app-bg, var(--rm-bg));
+  min-height: 100%;
+  padding-top: env(safe-area-inset-top);
+  box-sizing: border-box;
+}
+
+:root.rm-fantasy .rm-card,
+:root.rm-fantasy .rm-tab-bar,
+:root.rm-fantasy .rm-theme-card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:root.rm-dark .rm-card,
+:root.rm-dark .rm-theme-card {
+  border-color: var(--rm-border);
+}
+
 /* ---------------------------------------------------------------------------
    Pages
    --------------------------------------------------------------------------- */
@@ -285,7 +325,7 @@ p {
 .rm-page {
   max-width: 640px;
   margin: 0 auto;
-  padding: 20px 16px 96px;
+  padding: 2px 16px 96px;
 
   /*
    * Relative to .rm-app-scroll (which has the real, explicit height), not
@@ -922,4 +962,293 @@ body.shopping-sheet-open app-voice-assistant-fab {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+
+/* ============================================================
+   ADDITIVE — iOS SAFE-AREA THEME BACKDROP
+   The app already locks html/body and scrolls inside .rm-app-scroll.
+   These rules make the OS safe-area/top chrome inherit the active
+   Nestly theme instead of exposing the browser's default white/gray.
+   ============================================================ */
+html,
+body {
+  background-color: var(--rm-app-bg, var(--rm-bg)) !important;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--rm-app-bg, var(--rm-bg));
+  pointer-events: none;
+  z-index: 2147483646;
+}
+
+
+/* ===========================================================================
+   NESTLY FANTASY THEME — V2 READABILITY PATCH
+   Keeps the Fantasy gradient and component accent colours, but prevents
+   low-contrast secondary/description text from becoming washed out.
+   =========================================================================== */
+
+:root.rm-fantasy {
+  --rm-text: #102044;
+  --rm-text-muted: #435779;
+  --rm-primary: #164fa8;
+  --rm-primary-dark: #123d86;
+  --rm-border: rgba(37, 63, 116, 0.20);
+  --rm-surface: rgba(255, 255, 255, 0.95);
+  --rm-surface-alt: rgba(248, 250, 255, 0.92);
+}
+
+/* Global semantic text roles used across Nestly pages. */
+:root.rm-fantasy .rm-page .rm-section-title,
+:root.rm-fantasy .rm-page .rm-mod-header__subtitle,
+:root.rm-fantasy .rm-page .rm-page-subtitle,
+:root.rm-fantasy .rm-page .rm-subtitle,
+:root.rm-fantasy .rm-page .rm-description,
+:root.rm-fantasy .rm-page .rm-helper-text,
+:root.rm-fantasy .rm-page .rm-meta,
+:root.rm-fantasy .rm-page .rm-caption,
+:root.rm-fantasy .rm-page .rm-empty-state__text,
+:root.rm-fantasy .rm-page .rm-empty-state__subtitle {
+  color: var(--rm-text-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Header titles/subtitles on module pages. */
+:root.rm-fantasy .rm-mod-header__title,
+:root.rm-fantasy .rm-mod-header h1,
+:root.rm-fantasy .rm-mod-header h2,
+:root.rm-fantasy .rm-mod-header p {
+  color: var(--rm-text) !important;
+  opacity: 1 !important;
+}
+
+/* Common text elements inside page content.
+   Exclude icons, badges and explicitly coloured module accents. */
+:root.rm-fantasy .rm-page p,
+:root.rm-fantasy .rm-page label,
+:root.rm-fantasy .rm-page .mat-mdc-card-subtitle {
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-page p:not([class*="accent"]):not([class*="status"]):not(.rm-success-chip),
+:root.rm-fantasy .rm-page label {
+  color: var(--rm-text-muted);
+}
+
+/* Material typography must not inherit a pale Material theme colour. */
+:root.rm-fantasy .mat-mdc-card-title,
+:root.rm-fantasy .mat-mdc-card-subtitle,
+:root.rm-fantasy .mat-mdc-dialog-title,
+:root.rm-fantasy .mat-mdc-dialog-content,
+:root.rm-fantasy .mat-mdc-dialog-actions,
+:root.rm-fantasy .mat-mdc-list-item-title,
+:root.rm-fantasy .mat-mdc-list-item-line,
+:root.rm-fantasy .mat-mdc-menu-item,
+:root.rm-fantasy .mat-mdc-option,
+:root.rm-fantasy .mat-mdc-select-value-text,
+:root.rm-fantasy .mat-mdc-header-cell,
+:root.rm-fantasy .mat-mdc-cell {
+  color: var(--rm-text) !important;
+  opacity: 1 !important;
+}
+
+/* Keep secondary Material text readable but visually secondary. */
+:root.rm-fantasy .mat-mdc-card-subtitle,
+:root.rm-fantasy .mat-mdc-form-field-hint,
+:root.rm-fantasy .mdc-list-item__secondary-text {
+  color: var(--rm-text-muted) !important;
+}
+
+/* Inputs/placeholders. */
+:root.rm-fantasy .mat-mdc-input-element,
+:root.rm-fantasy input,
+:root.rm-fantasy textarea {
+  color: var(--rm-text) !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .mat-mdc-input-element::placeholder,
+:root.rm-fantasy input::placeholder,
+:root.rm-fantasy textarea::placeholder {
+  color: var(--rm-text-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Dashboard Hero: preserve the original artwork/layout, only improve text
+   contrast when Fantasy is active. */
+:root.rm-fantasy .rm-welcome-hero__title,
+:root.rm-fantasy .rm-welcome-hero__sub,
+:root.rm-fantasy .rm-hero-motto__sub {
+  color: #102044 !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-welcome-hero__name,
+:root.rm-fantasy .rm-welcome-hero__greeting {
+  color: #245f45 !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-hero-motto__line--blue {
+  color: #234d9c !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-hero-motto__line--green {
+  color: #2f7042 !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-hero-motto__sub {
+  color: #263653 !important;
+  opacity: 1 !important;
+}
+
+/* Dashboard's lower informational text. */
+:root.rm-fantasy .rm-next-turn__label,
+:root.rm-fantasy .rm-next-turn__date,
+:root.rm-fantasy .rm-lower-card__subtitle,
+:root.rm-fantasy .rm-lower-card__month,
+:root.rm-fantasy .rm-quick-actions__see-all {
+  color: var(--rm-text-muted) !important;
+  opacity: 1 !important;
+}
+
+:root.rm-fantasy .rm-next-turn__name,
+:root.rm-fantasy .rm-lower-card__title,
+:root.rm-fantasy .rm-quick-actions__title {
+  color: var(--rm-text) !important;
+  opacity: 1 !important;
+}
+
+/* Never wash out the four Dashboard module accents. */
+:root.rm-fantasy .rm-module-card--garbage .rm-module-card__title,
+:root.rm-fantasy .rm-module-card--expenses .rm-module-card__title,
+:root.rm-fantasy .rm-module-card--history .rm-module-card__title,
+:root.rm-fantasy .rm-module-card--shopping .rm-module-card__title {
+  opacity: 1 !important;
+}
+
+/* Remove the known low-opacity text treatment in Fantasy while preserving
+   opacity on images/background artwork and controls. */
+:root.rm-fantasy .rm-page .rm-section-title,
+:root.rm-fantasy .rm-page [class*="subtitle"],
+:root.rm-fantasy .rm-page [class*="description"],
+:root.rm-fantasy .rm-page [class*="caption"] {
+  opacity: 1 !important;
+}
+
+
+/* ===========================================================================
+   FANTASY THEME — GREEN TEXT -> WHITE
+   ---------------------------------------------------------------------------
+   In Fantasy mode, text that previously used the application's green
+   branding/primary colour is rendered white for contrast against the
+   blue/purple gradient. Module-specific card colours are intentionally
+   preserved.
+   =========================================================================== */
+
+:root.rm-fantasy {
+  --rm-primary: #ffffff;
+  --rm-primary-dark: #ffffff;
+}
+
+/* Dashboard hero: replace the green branding text with white. */
+:root.rm-fantasy .rm-welcome-hero__name,
+:root.rm-fantasy .rm-welcome-hero__greeting,
+:root.rm-fantasy .rm-hero-motto__line--green {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Common application-level primary/green text.
+   Keep module/card-specific accent classes out of this override. */
+:root.rm-fantasy .rm-page .text-primary,
+:root.rm-fantasy .rm-page .text-success,
+:root.rm-fantasy .rm-page .primary-text,
+:root.rm-fantasy .rm-page .success-text,
+:root.rm-fantasy .rm-page .rm-primary-text,
+:root.rm-fantasy .rm-page .rm-success-text {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Common headings/subheadings that inherit the old green primary colour. */
+:root.rm-fantasy .rm-page h1.rm-primary,
+:root.rm-fantasy .rm-page h2.rm-primary,
+:root.rm-fantasy .rm-page h3.rm-primary,
+:root.rm-fantasy .rm-page .rm-page-title,
+:root.rm-fantasy .rm-page .rm-page-header__title {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Material primary/success text when a component explicitly inherits
+   the application primary colour. */
+:root.rm-fantasy .mat-mdc-button.mat-primary,
+:root.rm-fantasy .mat-mdc-icon-button.mat-primary,
+:root.rm-fantasy .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: #ffffff !important;
+}
+
+/* Do NOT recolour the four Dashboard module titles/icons:
+   their orange/purple/teal/green colours are intentional. */
+
+
+/* ===========================================================================
+   FANTASY THEME — COMPONENT SECONDARY TEXT
+   These are the exact page-level descriptive/section texts that otherwise
+   inherit the muted/green palette and become faint on the Fantasy gradient.
+   =========================================================================== */
+
+:root.rm-fantasy .rm-mod-header p,
+:root.rm-fantasy .rm-section-title,
+:root.rm-fantasy .rm-inventory-title span,
+:root.rm-fantasy .shopping-header p,
+:root.rm-fantasy .shopping-header__eyebrow,
+:root.rm-fantasy .rm-page-subtitle,
+:root.rm-fantasy .rm-page-subtitle,
+:root.rm-fantasy .rm-module-subtitle {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Inventory: “• 10 items” and related header metadata. */
+:root.rm-fantasy .rm-inventory-title span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Garbage/Collection page description. */
+:root.rm-fantasy .rm-page > .rm-mod-header p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Shopping description: “Everything your home needs...” */
+:root.rm-fantasy .shopping-header p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Expenses “Settlement”, “Expenses”, and other global section labels. */
+:root.rm-fantasy .rm-expenses .rm-section-title,
+:root.rm-fantasy .rm-expense-toolbar .rm-section-title {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+
+/* Fantasy theme: summary heading stays dark for readability on the
+   light summary card. */
+:root.rm-fantasy .rm-expenses .rm-summary-card .rm-section-title {
+  color: #374151 !important;
+  opacity: 1 !important;
 }

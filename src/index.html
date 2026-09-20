@@ -35,7 +35,10 @@
         'forest': '#f4f8f2',
         'sunset': '#fff8f2',
         'lavender': '#f9f6fc',
-        'midnight': '#141816'
+        'midnight': '#141816',
+        'midnight-neon': '#080d1b',
+        'vibrant-playful': '#f5f9ff',
+        'fantasy-gradient': '#4566d9'
       };
 
       const background =
@@ -43,15 +46,28 @@
 
       const root = document.documentElement;
 
-root.style.setProperty('--rm-bg', background);
-root.style.backgroundColor = background;
+      root.style.setProperty('--rm-bg', background);
+      root.style.setProperty('--rm-app-bg', background);
+      root.style.backgroundColor = background;
 
-const themeColorMeta =
-  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+      const themeColorMeta =
+        document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
 
-if (themeColorMeta) {
-  themeColorMeta.setAttribute('content', background);
-}
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', background);
+      }
+
+      const statusBarMeta =
+        document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
+
+      if (statusBarMeta) {
+        statusBarMeta.setAttribute(
+          'content',
+          themeId === 'midnight' || themeId === 'midnight-neon' || themeId === 'fantasy-gradient'
+            ? 'black-translucent'
+            : 'default'
+        );
+      }
 } catch {
       // Keep the existing default startup appearance if storage is unavailable.
     }

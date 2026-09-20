@@ -321,7 +321,7 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: #f4f2ec;
+  background: var(--rm-surface-alt);
   overflow: hidden
 }
 
@@ -368,7 +368,7 @@
 .qty {
   display: flex;
   align-items: center;
-  background: #f4f3ee;
+  background: var(--rm-surface-alt);
   border-radius: 11px;
   overflow: hidden
 }
@@ -651,7 +651,7 @@
   width: 52px;
   height: 52px;
   border-radius: 13px;
-  background: #f5f3ee;
+  background: var(--rm-surface-alt);
   display: grid;
   place-items: center;
   overflow: hidden
@@ -702,7 +702,7 @@
   flex: 0 0 40px;
   border-radius: 11px;
   overflow: hidden;
-  background: #f5f3ee
+  background: var(--rm-surface-alt)
 }
 
 .selection-image img {
@@ -819,7 +819,7 @@
 
 .cancel-btn {
   width: 88px;
-  background: #f3f2ee;
+  background: var(--rm-surface-alt);
   color: var(--rm-text)
 }
 
@@ -1033,7 +1033,7 @@
   height: 25px;
   border-radius: 50%;
   object-fit: cover;
-  background: #f4f2ec;
+  background: var(--rm-surface-alt);
 }
 
 .selected-pill span {

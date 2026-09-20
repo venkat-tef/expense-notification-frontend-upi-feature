@@ -62,6 +62,20 @@
           <mat-icon>logout</mat-icon>
         </button>
 
+        <button
+          class="rm-profile-button"
+          type="button"
+          (click)="openProfile()"
+          aria-label="Open profile and settings"
+        >
+          @if (profileAvatarUrl(); as profileAvatar) {
+            <img [src]="profileAvatar" [alt]="avatarAlt()" />
+          } @else {
+            <mat-icon>person</mat-icon>
+          }
+          <span class="rm-profile-button__status" aria-hidden="true"></span>
+        </button>
+
       </div>
     </div>
 
@@ -414,126 +428,71 @@
   </div>
 
 
-  <!-- EXISTING EXPENSE SUMMARY -->
-
-  @if (hasExpenseData()) {
-
-    <p class="rm-section-title">
-      This Month
-    </p>
-
-    <div class="rm-card rm-expense-summary">
-
-      <div class="rm-expense-summary__total">
-
-        <span class="rm-expense-summary__amount">
-          ₹{{ monthExpenseTotal() | number: '1.0-0' }}
-        </span>
-
-        <span class="rm-expense-summary__label">
-          Total Expenses
-        </span>
-
+  <section class="rm-dashboard-lower-grid">
+    <div class="rm-card rm-monthly-overview">
+      <div class="rm-lower-card__heading">
+        <span class="rm-lower-card__icon rm-lower-card__icon--green"><mat-icon>bar_chart</mat-icon></span>
+        <span>Monthly Overview</span>
+        <span class="rm-lower-card__month">{{ monthLabel() }}</span>
       </div>
-
-
-      <div class="rm-expense-summary__split">
-
-        <div class="rm-expense-summary__split-item">
-
-          <span class="rm-expense-summary__split-label">
-            You Spent
-          </span>
-
-          <span
-            class="rm-expense-summary__split-value
-                   rm-expense-summary__split-value--spent"
-          >
-            ₹{{ youSpent() | number: '1.0-0' }}
-          </span>
-
-        </div>
-
-
-        <div class="rm-expense-summary__divider"></div>
-
-
-        <div class="rm-expense-summary__split-item">
-
-          <span class="rm-expense-summary__split-label">
-            You Get
-          </span>
-
-          <span
-            class="rm-expense-summary__split-value
-                   rm-expense-summary__split-value--get"
-          >
-            ₹{{ youGet() | number: '1.0-0' }}
-          </span>
-
-        </div>
-
+      <div class="rm-monthly-overview__stats">
+        <div><strong>₹{{ monthExpenseTotal() | number:'1.0-0' }}</strong><span>Expenses</span></div>
+        <div><strong>₹{{ youSpent() | number:'1.0-0' }}</strong><span>My Spent</span></div>
       </div>
-
-
-      <button
-        class="rm-expense-summary__cta"
-        (click)="open('/expenses')"
-      >
-        View details
-        <mat-icon>arrow_forward</mat-icon>
-      </button>
-
     </div>
 
-  }
+    <div class="rm-card rm-thought-card">
+      <div>
+        <div class="rm-lower-card__heading rm-thought-card__heading">
+          <span class="rm-lower-card__icon rm-lower-card__icon--pink"><mat-icon>favorite</mat-icon></span>
+          <span>Today's Thought</span>
+        </div>
+        <p>“A clean home is<br />a happy mind.”</p>
+      </div>
+      <span class="rm-thought-card__plant" aria-hidden="true">🪴</span>
+    </div>
+  </section>
 
+  <button class="rm-ask-nestly" type="button" (click)="openVoiceAssistant()" aria-label="Ask Nestly">
+    <span class="rm-ask-nestly__mic"><mat-icon>mic</mat-icon></span>
+    <span class="rm-ask-nestly__copy">
+      <strong>Ask Nestly</strong>
+      <small>Try “What are my expenses this month?”</small>
+    </span>
+    <span class="rm-ask-nestly__robot"><mat-icon>smart_toy</mat-icon></span>
+    <span class="rm-ask-nestly__help">Here<br />to help!</span>
+  </button>
 
-  <!-- EXISTING RECENT ACTIVITY -->
+  <section class="rm-quick-actions">
+    <div class="rm-quick-actions__heading">
+      <h2>Quick Actions</h2>
+      <button type="button" (click)="open('/settings')">See All <mat-icon>arrow_forward</mat-icon></button>
+    </div>
+
+    <div class="rm-quick-actions__grid">
+      @for (action of quickActions; track action.path) {
+        <button class="rm-quick-action" type="button" [style.--rm-action-color]="action.color" (click)="openQuickAction(action)">
+          <span><mat-icon>{{ action.icon }}</mat-icon></span>
+          {{ action.label }}
+        </button>
+      }
+    </div>
+  </section>
 
   @if (recentActivity().length > 0) {
-
-    <p class="rm-section-title">
-      Recent Activity
-    </p>
-
+    <p class="rm-section-title rm-dashboard-activity-title">Recent Activity</p>
     <div class="rm-card rm-activity-list">
-
-      @for (
-        item of recentActivity();
-        track item.id
-      ) {
-
+      @for (item of recentActivity(); track item.id) {
         <div class="rm-activity-item">
-
-          <span class="rm-activity-item__icon">
-            <mat-icon>
-              {{ activityIcon(item.type) }}
-            </mat-icon>
-          </span>
-
+          <span class="rm-activity-item__icon"><mat-icon>{{ activityIcon(item.type) }}</mat-icon></span>
           <div class="rm-activity-item__text">
-
-            <span class="rm-activity-item__title">
-              {{ item.title }}
-            </span>
-
-            <span class="rm-activity-item__body">
-              {{ item.body }}
-            </span>
-
+            <span class="rm-activity-item__title">{{ item.title }}</span>
+            <span class="rm-activity-item__body">{{ item.body }}</span>
           </div>
-
-          <span class="rm-activity-item__time">
-            {{ timeAgo(item.createdAt) }}
-          </span>
-
+          <span class="rm-activity-item__time">{{ timeAgo(item.createdAt) }}</span>
         </div>
-
       }
-
     </div>
-
   }
 
 </div>

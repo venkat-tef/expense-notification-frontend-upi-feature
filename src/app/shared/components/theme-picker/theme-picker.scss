@@ -76,3 +76,19 @@
   font-size: 11.5px;
   color: var(--rm-text-muted);
 }
+
+
+.rm-theme-card__mode {
+  align-self: flex-start;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rm-primary) 10%, transparent);
+  color: var(--rm-primary);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+:host-context(.rm-dark) .rm-theme-card__mode {
+  background: color-mix(in srgb, var(--rm-primary) 14%, transparent);
+}

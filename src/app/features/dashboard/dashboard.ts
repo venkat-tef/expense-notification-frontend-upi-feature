@@ -8,16 +8,22 @@ import { WaterService } from '../../core/services/water.service';
 import { CookingService } from '../../core/services/cooking.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { MatDialog } from '@angular/material/dialog';
 import { NotificationService } from '../../core/services/notification.service';
 import { NotificationSheet } from '../../shared/components/notification-sheet/notification-sheet';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialogModule } from '@angular/material/dialog';
 import { ThemeService } from '../../core/services/theme.service';
 import { ExpenseService } from '../../core/services/expense.service';
+import { InventoryService } from '../../core/services/inventory.service';
+import { VoiceAssistantSheet } from '../../shared/components/voice-assistant-sheet/voice-assistant-sheet';
 import { MonthlySummaryService } from '../../core/services/monthly-summary.service';
 import { AppNotification, NotificationType } from '../../core/models/notification.model';
 import { TransparentAvatarComponent } from './transparent-avatar.component';
 import { FestivalService } from '../../core/services/festival.service';
 import { FestivalBanner } from '../../shared/components/festival-banner/festival-banner';
+import { ExpenseDialog, ExpenseDialogData, ExpenseDialogResult } from '../expenses/expense-dialog/expense-dialog';
+import { InventoryItemDialog, InventoryItemDialogData, InventoryItemDialogResult } from '../inventory/inventory-item-dialog/inventory-item-dialog';
 
 interface DashCard {
   path: string;
@@ -29,6 +35,7 @@ interface DashCard {
 
 interface QuickAction {
   path: string;
+  modal?: 'expense' | 'inventory';
   label: string;
   icon: string;
   color: string;
@@ -64,7 +71,7 @@ function currentMonthKey(): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatBadgeModule, TransparentAvatarComponent, FestivalBanner],
+  imports: [CommonModule, MatIconModule, MatBadgeModule, MatDialogModule, TransparentAvatarComponent, FestivalBanner],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -82,6 +89,7 @@ export class Dashboard implements OnInit, OnDestroy {
   // listeners are created by injecting them here.
   readonly expenseService = inject(ExpenseService);
   readonly summaryService = inject(MonthlySummaryService);
+  readonly inventoryService = inject(InventoryService);
 
   readonly waterAccent = WATER_ACCENT;
   readonly cookingAccent = COOKING_ACCENT;
@@ -97,11 +105,12 @@ export class Dashboard implements OnInit, OnDestroy {
     { path: '/shopping', title: 'Shopping', subtitle: 'Plan groceries together', icon: 'shopping_cart', color: '#2e7d32' },
   ];
 
-  /** ADDITIVE — Quick Actions row. Reuses the same router.navigateByUrl path as open(). */
+  /** Quick Actions — visual shortcuts into existing screens; no new write operation is introduced. */
   readonly quickActions: QuickAction[] = [
-    { path: '/expenses', label: 'Expense', icon: 'add', color: '#7b1fa2' },
-    { path: '/water', label: 'Water', icon: 'water_drop', color: WATER_ACCENT },
-    { path: '/cooking', label: 'Garbage', icon: 'delete', color: COOKING_ACCENT },
+    { path: '/expenses', modal: 'expense', label: 'Add Expense', icon: 'add', color: 'var(--rm-expenses)' },
+    { path: '/inventory', modal: 'inventory', label: 'Add Item', icon: 'add', color: 'var(--rm-shopping)' },
+    { path: '/cooking', label: 'Add Task', icon: 'add', color: 'var(--rm-garbage)' },
+    { path: '/settings', label: 'Invite Member', icon: 'add', color: 'var(--rm-accent)' },
   ];
 
   /** In-flight guards so a rapid double-tap can't fire two skips before the UI updates. */
@@ -131,6 +140,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   readonly auth = inject(AuthService);
   private readonly bottomSheet = inject(MatBottomSheet);
+  private readonly dialog = inject(MatDialog);
   readonly notificationService = inject(NotificationService);
 
   // ============================================================
@@ -185,8 +195,10 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   };
 
-  readonly heroBgSrc = computed(() =>
-  this.themeService.activeThemeId() === 'midnight'
+readonly heroBgSrc = computed(() =>
+  this.themeService.activeThemeId() === 'midnight' ||
+  this.themeService.activeThemeId() === 'midnight-neon' ||
+   this.themeService.activeThemeId() === 'fantasy-gradient'
     ? 'assets/dashboard-hero-bg-dark.png'
     : 'assets/dashboard-hero-bg.png'
 );
@@ -251,6 +263,104 @@ readonly avatarAlt = computed(() => {
   const name = this.memberService.currentMember()?.name ?? this.currentMemberName;
   return name ? `Welcome illustration for ${name}` : 'Welcome illustration';
 });
+
+  readonly profileAvatarUrl = computed(() =>
+    this.memberService.currentMember()?.photoUrl ?? this.avatarUrl()
+  );
+
+  readonly monthLabel = computed(() =>
+    new Intl.DateTimeFormat('en-IN', { month: 'short', year: 'numeric' }).format(new Date())
+  );
+
+
+  openProfile(): void {
+    this.router.navigateByUrl('/settings');
+  }
+
+  openQuickAction(action: QuickAction): void {
+    if (action.modal === 'expense') {
+      this.openAddExpense();
+      return;
+    }
+
+    if (action.modal === 'inventory') {
+      this.openAddItem();
+      return;
+    }
+
+    this.open(action.path);
+  }
+
+  private openAddExpense(): void {
+    const members = this.memberService.members();
+    if (!members.length) {
+      this.snackBar.open('Add roommates in Settings first.', 'OK', { duration: 3000 });
+      return;
+    }
+
+    const data: ExpenseDialogData = {
+      members,
+      monthKey: currentMonthKey(),
+    };
+
+    const ref = this.dialog.open(ExpenseDialog, {
+      data,
+      width: '480px',
+      maxWidth: '95vw',
+      autoFocus: false,
+    });
+
+    ref.afterClosed().subscribe(async (result: ExpenseDialogResult | undefined) => {
+      if (!result) return;
+
+      try {
+        await this.expenseService.addExpense(result);
+        this.snackBar.open('Expense added.', undefined, {
+          duration: 1800,
+          panelClass: 'rm-snack-success',
+        });
+      } catch (error) {
+        console.error('Failed to add expense from dashboard quick action', error);
+        this.snackBar.open('Could not add the expense.', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  private openAddItem(): void {
+    const data: InventoryItemDialogData = {
+      category: 'fridge',
+    };
+
+    const ref = this.dialog.open(InventoryItemDialog, {
+      data,
+      width: '480px',
+      maxWidth: '95vw',
+      autoFocus: false,
+    });
+
+    ref.afterClosed().subscribe(async (result: InventoryItemDialogResult | undefined) => {
+      if (!result) return;
+
+      try {
+        const added = await this.inventoryService.addItem(result);
+        if (added) {
+          this.snackBar.open('Item added.', undefined, {
+            duration: 1800,
+            panelClass: 'rm-snack-success',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to add inventory item from dashboard quick action', error);
+        this.snackBar.open('Could not add the item.', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  openVoiceAssistant(): void {
+    this.bottomSheet.open(VoiceAssistantSheet, {
+      panelClass: 'rm-voice-sheet-panel',
+    });
+  }
 
   ngOnInit(): void {
     document.addEventListener('visibilitychange', this.onVisibilityChange);
@@ -353,10 +463,10 @@ readonly avatarAlt = computed(() => {
    */
 
 logoSrc(): string {
-  return this.themeService.activeThemeId() === 'midnight'
-    ? 'assets/nestly-logo-dark.png'
-    : 'assets/nestly-logo-light.png';
-}
+    return ['midnight', 'midnight-neon'].includes(this.themeService.activeThemeId())
+      ? 'assets/nestly-logo-dark.png'
+      : 'assets/nestly-logo-light.png';
+  }
   
   get currentMemberName(): string | null {
     const uid = this.auth.user()?.uid;
