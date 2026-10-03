@@ -1,16 +1,27 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { collection, doc, onSnapshot, query, serverTimestamp, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { MonthlySummary } from '../models/expense.model';
-import { MemberService } from './member.service';        // NEW
-import { ExpenseService } from './expense.service';        // NEW
-import { NotificationService } from './notification.service'; // NEW
+import { MemberService } from './member.service';
+import { ExpenseService } from './expense.service';
+import { NotificationService } from './notification.service';
 
 const COLLECTION = 'monthly_summary';
 
 function formatMonthLabel(monthKey: string): string {
   const [y, m] = monthKey.split('-').map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,7 +29,6 @@ export class MonthlySummaryService {
   readonly summaries = signal<MonthlySummary[]>([]);
   readonly loaded = signal(false);
 
-  // NEW — needed only for the Settlement Ready / Power Bill notification fan-out below.
   private readonly memberService = inject(MemberService);
   private readonly expenseService = inject(ExpenseService);
   private readonly notifications = inject(NotificationService);
@@ -29,11 +39,13 @@ export class MonthlySummaryService {
 
   private listen(): void {
     const q = query(collection(firestoreDb, COLLECTION));
+
     onSnapshot(
       q,
       (snap) => {
         const list: MonthlySummary[] = snap.docs.map((d) => {
           const data = d.data() as any;
+
           return {
             monthKey: d.id,
             roomRent: data['roomRent'] ?? 0,
@@ -44,6 +56,7 @@ export class MonthlySummaryService {
             updatedAt: data['updatedAt']?.toMillis?.() ?? Date.now(),
           };
         });
+
         this.summaries.set(list);
         this.loaded.set(true);
       },
@@ -58,7 +71,6 @@ export class MonthlySummaryService {
     return this.summaries().find((s) => s.monthKey === monthKey);
   }
 
-  /** Fallback for a month that has no summary doc yet — nothing has been entered so far. */
   emptyFor(monthKey: string): MonthlySummary {
     return {
       monthKey,
@@ -71,35 +83,61 @@ export class MonthlySummaryService {
     };
   }
 
-  private async upsert(monthKey: string, patch: Record<string, unknown>): Promise<void> {
+  private async upsert(
+    monthKey: string,
+    patch: Record<string, unknown>
+  ): Promise<void> {
     const exists = !!this.forMonth(monthKey);
-    const data: Record<string, unknown> = { ...patch, updatedAt: serverTimestamp() };
-    if (!exists) data['createdAt'] = serverTimestamp();
-    await setDoc(doc(firestoreDb, COLLECTION, monthKey), data, { merge: true });
+
+    const data: Record<string, unknown> = {
+      ...patch,
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!exists) {
+      data['createdAt'] = serverTimestamp();
+    }
+
+    await setDoc(
+      doc(firestoreDb, COLLECTION, monthKey),
+      data,
+      { merge: true }
+    );
   }
 
   async setRoomRent(monthKey: string, amount: number): Promise<void> {
-    await this.upsert(monthKey, { roomRent: amount });
+    await this.upsert(monthKey, {
+      roomRent: amount,
+    });
   }
 
   /**
-   * Electricity bills arrive the following month but still belong to `monthKey`.
-   * Setting this is what unblocks that month's settlement.
+   * Electricity bills arrive the following month but still belong to monthKey.
+   *
+   * The notification must only be generated after:
+   * 1. The bill has successfully been saved.
+   * 2. MemberService has finished loading the members.
+   *
+   * This prevents the notification from being silently skipped when the
+   * members snapshot has not arrived yet.
    */
-  async setElectricityBill(monthKey: string, amount: number): Promise<void> {
+  async setElectricityBill(
+    monthKey: string,
+    amount: number
+  ): Promise<void> {
     await this.upsert(monthKey, {
       electricityBill: amount,
       electricityBillSet: true,
     });
 
-    // FIX — deliberately NOT awaited. The notification fan-out is a side effect of
-    // saving the bill, not part of the save itself: the UI (saveElectricity() in
-    // expenses.ts) closes the input the instant upsert() above resolves, exactly like
-    // before this fan-out existed. Any failure inside notifyPowerBillAdded() is caught
-    // and logged there — it can never reject back to this method or its caller.
-    this.notifyPowerBillAdded(monthKey, amount).catch((err) =>
-      console.error('notifyPowerBillAdded failed', err)
-    );
+    try {
+      await this.notifyPowerBillAdded(monthKey, amount);
+    } catch (err) {
+      console.error(
+        'notifyPowerBillAdded failed:',
+        err
+      );
+    }
   }
 
   async clearElectricityBill(monthKey: string): Promise<void> {
@@ -108,24 +146,35 @@ export class MonthlySummaryService {
       electricityBillSet: false,
     });
 
-    // ROOT-CAUSE FIX — this used to delete the notifyOnce() "already notified" marker
-    // doc (`settlement_ready_${monthKey}_${memberId}`) so a later re-add could notify
-    // again. That marker WAS the "Power bill added" notification's only Firestore
-    // record, so deleting it silently erased that notification from history — with
-    // no "Power bill deleted" notification ever created to replace it. Net effect:
-    // ADD -> DELETE -> ADD left only the newest ADD visible, exactly the bug reported.
-    //
-    // Now every lifecycle event (added / deleted / added again) is its own permanent,
-    // addDoc()-backed record via notifyMember() — nothing here deletes history, and
-    // this explicitly records the deletion as its own event.
-    const enteredByMemberId = this.memberService.currentMember()?.id;
-    const monthLabel = formatMonthLabel(monthKey);
+    /*
+     * Do NOT delete any previous notification document here.
+     *
+     * Every add/remove event should remain an independent notification.
+     */
 
-    const results = await Promise.allSettled(
-      this.memberService
+    try {
+      // Make sure members are available before creating removal notifications.
+      await this.memberService.whenLoaded();
+
+      const enteredByMemberId =
+        this.memberService.currentMember()?.id;
+
+      const monthLabel = formatMonthLabel(monthKey);
+
+      const members = this.memberService
         .members()
-        .filter((m) => m.id !== enteredByMemberId) // never notify the person who cleared the bill
-        .map((m) =>
+        .filter((m) => m.role !== 'guest')
+        .filter((m) => m.id !== enteredByMemberId);
+
+      if (!members.length) {
+        console.warn(
+          'clearElectricityBill: no eligible members found'
+        );
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        members.map((m) =>
           this.notifications.notifyMember(
             'settlement_ready',
             '⚡ Power Bill Removed',
@@ -134,89 +183,169 @@ export class MonthlySummaryService {
             m.uid ?? m.id
           )
         )
-    );
-    results.forEach((r) => {
-      if (r.status === 'rejected') {
-        console.error('clearElectricityBill: failed to send a removal notification for a member', r.reason);
-      }
+      );
+
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          console.error(
+            'clearElectricityBill: failed to send removal notification:',
+            result.reason
+          );
+        }
+      });
+    } catch (err) {
+      console.error(
+        'clearElectricityBill notification failed:',
+        err
+      );
+    }
+  }
+
+  async toggleSettlementCompleted(
+    monthKey: string,
+    completed: boolean
+  ): Promise<void> {
+    await this.upsert(monthKey, {
+      settlementCompleted: completed,
     });
   }
 
-  async toggleSettlementCompleted(monthKey: string, completed: boolean): Promise<void> {
-    await this.upsert(monthKey, { settlementCompleted: completed });
-  }
-
   /**
-   * Fans out one individualized "Power bill added" notification per member (excluding
-   * whoever just entered the bill), each with their own owed/owed-back amount for the
-   * month so far. Type stays 'settlement_ready' — already wired end-to-end (bell + push,
-   * via the existing Render announcementListener.js) and no model/backend change is
-   * needed to reuse it here.
+   * Creates one notification for every eligible member.
    *
-   * ROOT-CAUSE FIX — this used to call notifyOnce() with a fixed ID
-   * (`settlement_ready_${monthKey}_${memberId}`) that depended only on the month and
-   * member, never on the specific event. notifyOnce() skips writing entirely if a doc
-   * with that ID already exists, so a genuinely new "bill added again" event for the
-   * same month silently produced NOTHING once the first notification for that month
-   * existed — and, combined with clearElectricityBill() deleting that same marker doc,
-   * meant only the single latest ADD was ever visible. Now uses notifyMember(), which
-   * always addDoc()s a brand-new history record — every add is its own permanent event.
-   *
-   * Each member's notifyMember() is individually try/caught. A failure for any ONE
-   * member (a network blip, a bad uid, anything) no longer aborts the loop — everyone
-   * else still gets notified.
+   * Important:
+   * - Wait for MemberService to load.
+   * - Do not use notifyOnce().
+   * - notifyMember() creates a new Firestore notification document
+   *   for every Power Bill event.
+   * - One failed member must not prevent other members from receiving
+   *   their notification.
    */
-  private async notifyPowerBillAdded(monthKey: string, electricityBill: number): Promise<void> {
-    // const members = this.memberService.members();
-      const members = this.memberService.members().filter((m) => m.role !== 'guest');
-    if (!members.length) return;
+  private async notifyPowerBillAdded(
+    monthKey: string,
+    electricityBill: number
+  ): Promise<void> {
+    /*
+     * IMPORTANT FIX:
+     *
+     * MemberService can still be loading when the electricity bill is
+     * saved. Previously members() could temporarily return [] and the
+     * function would simply return without creating any notification.
+     *
+     * Wait until the member snapshot has completed.
+     */
+    await this.memberService.whenLoaded();
 
-    const roomRent = this.forMonth(monthKey)?.roomRent ?? 0;
-    const monthExpenses = this.expenseService.forMonth(monthKey);
-    const otherExpensesTotal = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const grandTotal = roomRent + electricityBill + otherExpensesTotal;
-    const share = grandTotal / members.length;
+    const members = this.memberService
+      .members()
+      .filter((m) => m.role !== 'guest');
 
-    const paidMap = new Map<string, number>();
-    for (const e of monthExpenses) {
-      paidMap.set(e.paidByMemberId, (paidMap.get(e.paidByMemberId) ?? 0) + e.amount);
+    if (!members.length) {
+      console.warn(
+        'notifyPowerBillAdded: no eligible members found'
+      );
+      return;
     }
 
-    const enteredByMemberId = this.memberService.currentMember()?.id;
-    const monthLabel = formatMonthLabel(monthKey);
+    const roomRent =
+      this.forMonth(monthKey)?.roomRent ?? 0;
 
-    // FIX — parallelized. Was a sequential `for...await` loop: each member's
-    // notifyOnce() (a getDoc() + setDoc() pair) had to fully finish before the next
-    // member's even started, so the Nth recipient waited on N-1 other round trips
-    // first — exactly why this felt slow next to notify()'s (expense-added) already-
-    // parallel Promise.all() below. Promise.allSettled() fires every member's call at
-    // once and, same as before, never lets one member's failure affect anyone else's —
-    // it just resolves/rejects independently per member instead of in series.
-    const results = await Promise.allSettled(
-      members
-        .filter((m) => m.id !== enteredByMemberId) // never notify the person who entered the bill
-        .map((m) => {
-          const uid = m.uid ?? m.id;
-          const paid = paidMap.get(m.id) ?? 0;
-          const remaining = share - paid;
-          const body =
-            remaining < -0.5
-              ? `Power bill added for ${monthLabel}. You'll get ₹${Math.abs(remaining).toFixed(2)} back.`
-              : `Power bill added. You have to pay ₹${remaining.toFixed(2)}.`;
+    const monthExpenses =
+      this.expenseService.forMonth(monthKey);
 
-          return this.notifications.notifyMember(
-            'settlement_ready',
-            '⚡ Power Bill Added',
-            body,
-            '/expenses',
-            uid
-          );
-        })
+    const otherExpensesTotal =
+      monthExpenses.reduce(
+        (sum, expense) => sum + expense.amount,
+        0
+      );
+
+    const grandTotal =
+      roomRent +
+      electricityBill +
+      otherExpensesTotal;
+
+    const share =
+      grandTotal / members.length;
+
+    /*
+     * Calculate how much each member has already paid.
+     */
+    const paidMap = new Map<string, number>();
+
+    for (const expense of monthExpenses) {
+      const currentPaid =
+        paidMap.get(expense.paidByMemberId) ?? 0;
+
+      paidMap.set(
+        expense.paidByMemberId,
+        currentPaid + expense.amount
+      );
+    }
+
+    /*
+     * Do not notify the member who entered the electricity bill.
+     */
+    const enteredByMemberId =
+      this.memberService.currentMember()?.id;
+
+    const monthLabel =
+      formatMonthLabel(monthKey);
+
+    const recipients = members.filter(
+      (member) =>
+        member.id !== enteredByMemberId
     );
 
-    results.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        console.error('notifyPowerBillAdded: failed for a member', r.reason);
+    if (!recipients.length) {
+      console.log(
+        'notifyPowerBillAdded: no recipients after excluding current member'
+      );
+      return;
+    }
+
+    /*
+     * Create all notification documents independently.
+     *
+     * Promise.allSettled() means:
+     * - Member A failure does not stop Member B.
+     * - Member B failure does not stop Member C.
+     */
+    const results = await Promise.allSettled(
+      recipients.map(async (member) => {
+        const uid =
+          member.uid ?? member.id;
+
+        const paid =
+          paidMap.get(member.id) ?? 0;
+
+        const remaining =
+          share - paid;
+
+        const body =
+          remaining < -0.5
+            ? `Power bill added for ${monthLabel}. You'll get ₹${Math.abs(
+                remaining
+              ).toFixed(2)} back.`
+            : `Power bill added. You have to pay ₹${remaining.toFixed(
+                2
+              )}.`;
+
+        await this.notifications.notifyMember(
+          'settlement_ready',
+          '⚡ Power Bill Added',
+          body,
+          '/expenses',
+          uid
+        );
+      })
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(
+          `notifyPowerBillAdded: failed for recipient ${recipients[index]?.id}:`,
+          result.reason
+        );
       }
     });
   }
